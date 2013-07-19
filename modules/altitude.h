@@ -72,6 +72,16 @@ extern void edit_base4_set(int8_t step);
 extern void edit_base5_sel(void);
 extern void edit_base5_dsel(void);
 extern void edit_base5_set(int8_t step);
+extern void edit_consumption_sel(void);
+extern void edit_consumption_dsel(void);
+extern void edit_consumption_set(int8_t step);
+extern void edit_unit_sel(void);
+extern void edit_unit_dsel(void);
+extern void edit_unit_set(int8_t step);
+extern void edit_filter_sel(void);
+extern void edit_filter_dsel(void);
+extern void edit_filter_set(int8_t step);
+
 
 extern const u8 int_to_array_conversion_table[][3];
 extern u8 *int_to_array(u32 n, u8 digits, u8 blanks);

@@ -46,15 +46,34 @@ s16 baseCalib[5] = {CONFIG_MOD_ALTITUDE_BASE1,
 };
 s32 limit_high, limit_low;
 uint8_t submenuState = 0;
+uint8_t consumption = CONFIG_MOD_ALTITUDE_CONSUMPTION;
+int16_t consumption_array[4] = {
+	SYS_MSG_RTC_MINUTE,
+	SYS_MSG_TIMER_4S,
+	SYS_MSG_RTC_SECOND,
+	SYS_MSG_TIMER_20HZ
+};
+
+#ifdef CONFIG_MOD_ALTITUDE_METRIC
+uint8_t useMetric = 1;
+#else
+uint8_t useMetric = 0;
+#endif
+
+#ifdef CONFIG_MOD_ALTITUDE_FILTER
+uint8_t useFilter = 1;
+#else
+uint8_t useFilter = 0;
+#endif
 
 static void altitude_activate(void)
 {
 	altitudeEnabled = 1;
 	/* display -- symbol while a measure is not performed */
-	display_chars(0, LCD_SEG_L1_3_0, "----", SEG_ON);
+	display_chars(0, LCD_SEG_L1_3_0, "----", SEG_SET);
 
 	//sys_messagebus_register(&update, SYS_MSG_RTC_SECOND);
-	sys_messagebus_register(&update, SYS_MSG_TIMER_4S);
+	sys_messagebus_register(&update, consumption_array[consumption-1]);
 }
 
 static void altitude_deactivate(void)
@@ -68,11 +87,11 @@ static void altitude_deactivate(void)
 	display_symbol(0, LCD_SYMB_ARROW_UP, SEG_OFF);
 	display_symbol(0, LCD_SYMB_ARROW_DOWN, SEG_OFF);
         
-#ifdef CONFIG_MOD_ALTITUDE_METRIC
-	display_symbol(0, LCD_UNIT_L1_M, SEG_OFF);
-#else
-	display_symbol(0, LCD_UNIT_L1_FT, SEG_OFF);
-#endif
+	if(useMetric){
+		display_symbol(0, LCD_UNIT_L1_M, SEG_OFF);
+	}else{
+		display_symbol(0, LCD_UNIT_L1_FT, SEG_OFF);
+	}
 	
 	
 	update_pressure_table((s16) sAlt.altitude, sAlt.pressure, sAlt.temperature);
@@ -90,15 +109,15 @@ void mod_altitude_init(void)
 	reset_altitude_measurement();
 	
 // Set lower and upper limits for offset correction
-#ifdef CONFIG_MOD_ALTITUDE_METRIC
-	// Limits for set_value function
-	limit_low = -100;
-	limit_high = 4000;
-#else
+	if(useMetric){
+		// Limits for set_value function
+		limit_low = -100;
+		limit_high = 4000;
+	}else{
 // Limits for set_value function
-	limit_low = -500;
-	limit_high = 9999;
-#endif
+		limit_low = -500;
+		limit_high = 9999;
+	}
 }
 
 // *************************************************************************************************
@@ -182,7 +201,7 @@ void start_altitude_measurement(void)
     // Show warning if pressure sensor was not initialised properly
     if (!ps_ok)
     {
-        display_chars(0, LCD_SEG_L1_2_0, "ERR", SEG_ON);
+        display_chars(0, LCD_SEG_L1_2_0, "ERR", SEG_SET);
         return;
     }
 
@@ -283,9 +302,9 @@ void do_altitude_measurement()
 
     // Store measured pressure value
 		if(altitudeEnabled){
-#ifdef CONFIG_MOD_ALTITUDE_FILTER
-			pressure = (u32) ((pressure * 0.7) + (sAlt.pressure * 0.3));
-#endif
+			if(useFilter){
+				pressure = (u32) ((pressure * 0.7) + (sAlt.pressure * 0.3));
+			}
 		}
 		sAlt.pressure = pressure;
         
@@ -322,146 +341,49 @@ void display_altitude(s16 alt)
 	u16 value;
 
 		
-#ifdef CONFIG_MOD_ALTITUDE_METRIC
-	// Display altitude in xxxx m format, allow 3 leading blank digits
-	if (alt >= 0)
-	{
-		value = alt;
-		//str = int_to_array(alt, 4, 3);
-		display_symbol(0,LCD_SYMB_ARROW_UP, SEG_ON);
-		display_symbol(0,LCD_SYMB_ARROW_DOWN, SEG_OFF);
-	}
-	else
-	{
-		value = alt * (-1);
-		//str = int_to_array(alt, 4, 3);
-		display_symbol(0,LCD_SYMB_ARROW_UP, SEG_OFF);
-		display_symbol(0,LCD_SYMB_ARROW_DOWN, SEG_ON);
-	}
-	display_symbol(0, LCD_UNIT_L1_M, SEG_ON);
-#else
+	if(useMetric){
+		// Display altitude in xxxx m format, allow 3 leading blank digits
+		if (alt >= 0)
+		{
+			value = alt;
+			display_symbol(0,LCD_SYMB_ARROW_UP, SEG_ON);
+			display_symbol(0,LCD_SYMB_ARROW_DOWN, SEG_OFF);
+		}
+		else
+		{
+			value = alt * (-1);
+			display_symbol(0,LCD_SYMB_ARROW_UP, SEG_OFF);
+			display_symbol(0,LCD_SYMB_ARROW_DOWN, SEG_ON);
+		}
+		display_symbol(0, LCD_UNIT_L1_M, SEG_ON);
+	}else{
 
-	// Convert from meters to feet
-	ft = convert_m_to_ft(alt);
+		// Convert from meters to feet
+		ft = convert_m_to_ft(alt);
 
-	// Limit to 9999ft (3047m)
-	if (ft > 9999)
-		ft = 9999;
+		// Limit to 9999ft (3047m)
+		if (ft > 9999)
+			ft = 9999;
 
-	// Display altitude in xxxx ft format, allow 3 leading blank digits
-	if (ft >= 0)
-	{
-		value = ft;
-		//str = int_to_array(ft, 4, 3);
-		display_symbol(0, LCD_SYMB_ARROW_UP, SEG_ON);
-		display_symbol(0, LCD_SYMB_ARROW_DOWN, SEG_OFF);
+		// Display altitude in xxxx ft format, allow 3 leading blank digits
+		if (ft >= 0)
+		{
+			value = ft;
+			display_symbol(0, LCD_SYMB_ARROW_UP, SEG_ON);
+			display_symbol(0, LCD_SYMB_ARROW_DOWN, SEG_OFF);
+		}
+		else
+		{
+			value = ft * -1;
+			display_symbol(0, LCD_SYMB_ARROW_UP, SEG_OFF);
+			display_symbol(0, LCD_SYMB_ARROW_DOWN, SEG_ON);
+		}
+		display_symbol(0, LCD_UNIT_L1_FT, SEG_ON);
 	}
-	else
-	{
-		value = ft * -1;
-		//str = int_to_array(ft, 4, 3);
-		display_symbol(0, LCD_SYMB_ARROW_UP, SEG_OFF);
-		display_symbol(0, LCD_SYMB_ARROW_DOWN, SEG_ON);
-	}
-	display_symbol(0, LCD_UNIT_L1_FT, SEG_ON);
-#endif
 	
 	_printf(0, LCD_SEG_L1_3_0, "%4u", value);
-	//display_chars(0, LCD_SEG_L1_3_0, str, SEG_SET);
 }
 
-/*
-
-// Quick integer to array conversion table for most common integer values
-const u8 int_to_array_conversion_table[][3] = {
-    "000", "001", "002", "003", "004", "005", "006", "007", "008", "009", "010", "011", "012",
-    "013", "014", "015",
-    "016", "017", "018", "019", "020", "021", "022", "023", "024", "025", "026", "027", "028",
-    "029", "030", "031",
-    "032", "033", "034", "035", "036", "037", "038", "039", "040", "041", "042", "043", "044",
-    "045", "046", "047",
-    "048", "049", "050", "051", "052", "053", "054", "055", "056", "057", "058", "059", "060",
-    "061", "062", "063",
-    "064", "065", "066", "067", "068", "069", "070", "071", "072", "073", "074", "075", "076",
-    "077", "078", "079",
-    "080", "081", "082", "083", "084", "085", "086", "087", "088", "089", "090", "091", "092",
-    "093", "094", "095",
-    "096", "097", "098", "099", "100", "101", "102", "103", "104", "105", "106", "107", "108",
-    "109", "110", "111",
-    "112", "113", "114", "115", "116", "117", "118", "119", "120", "121", "122", "123", "124",
-    "125", "126", "127",
-    "128", "129", "130", "131", "132", "133", "134", "135", "136", "137", "138", "139", "140",
-    "141", "142", "143",
-    "144", "145", "146", "147", "148", "149", "150", "151", "152", "153", "154", "155", "156",
-    "157", "158", "159",
-    "160", "161", "162", "163", "164", "165", "166", "167", "168", "169", "170", "171", "172",
-    "173", "174", "175",
-    "176", "177", "178", "179", "180",
-};
-u8 int_to_array_str[8];
-// *************************************************************************************************
-// @fn          int_to_array
-// @brief       Generic integer to array routine. Converts integer n to string.
-//                              Default conversion result has leading zeros, e.g. "00123"
-//                              Option to convert leading '0' into whitespace (blanks)
-// @param       u32 n                   integer to convert
-//                              u8 digits               number of digits
-//                              u8 blanks               fill up result string with number of
-// whitespaces instead of leading zeros
-// @return      u8                              string
-// *************************************************************************************************
-u8 *int_to_array(u32 n, u8 digits, u8 blanks)
-{
-    u8 i;
-    u8 digits1 = digits;
-
-    // Preset result string
-    memcpy(int_to_array_str, "0000000", 7);
-
-    // Return empty string if number of digits is invalid (valid range for digits: 1-7)
-    if ((digits == 0) || (digits > 7))
-        return (int_to_array_str);
-
-    // Numbers 0 .. 180 can be copied from int_to_array_conversion_table without conversion
-    if (n <= 180)
-    {
-        if (digits >= 3)
-        {
-            memcpy(int_to_array_str + (digits - 3), int_to_array_conversion_table[n], 3);
-        }
-        else                    // digits == 1 || 2
-        {
-            memcpy(int_to_array_str, int_to_array_conversion_table[n] + (3 - digits), digits);
-        }
-    }
-    else                        // For n > 180 need to calculate string content
-    {
-        // Calculate digits from least to most significant number
-        do
-        {
-            int_to_array_str[digits - 1] = n % 10 + '0';
-            n /= 10;
-        }
-        while (--digits > 0);
-    }
-
-    // Remove specified number of leading '0', always keep last one
-    i = 0;
-    while ((int_to_array_str[i] == '0') && (i < digits1 - 1))
-    {
-        if (blanks > 0)
-        {
-            // Convert only specified number of leading '0'
-            int_to_array_str[i] = ' ';
-            blanks--;
-        }
-        i++;
-    }
-
-    return (int_to_array_str);
-}
-
-*/
 
 
 
@@ -469,7 +391,7 @@ void edit_base1_sel(void)
 {	
 	display_altitude(baseCalib[0]);
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
-	display_chars(0, LCD_SEG_L2_5_0, "BASE 1", SEG_ON);
+	display_chars(0, LCD_SEG_L2_5_0, " PRE 1", SEG_SET);
 }
 void edit_base1_dsel(void)
 {
@@ -490,7 +412,7 @@ void edit_base2_sel(void)
 {	
 	display_altitude(baseCalib[1]);
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
-	display_chars(0, LCD_SEG_L2_5_0, "BASE 2", SEG_ON);
+	display_chars(0, LCD_SEG_L2_5_0, " PRE 2", SEG_SET);
 }
 void edit_base2_dsel(void)
 {
@@ -511,7 +433,7 @@ void edit_base3_sel(void)
 {	
 	display_altitude(baseCalib[2]);
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
-	display_chars(0, LCD_SEG_L2_5_0, "BASE 3", SEG_ON);
+	display_chars(0, LCD_SEG_L2_5_0, " PRE 3", SEG_SET);
 }
 void edit_base3_dsel(void)
 {
@@ -532,7 +454,7 @@ void edit_base4_sel(void)
 {	
 	display_altitude(baseCalib[3]);
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
-	display_chars(0, LCD_SEG_L2_5_0, "BASE 4", SEG_ON);
+	display_chars(0, LCD_SEG_L2_5_0, " PRE 4", SEG_SET);
 }
 void edit_base4_dsel(void)
 {
@@ -552,7 +474,7 @@ void edit_base5_sel(void)
 {	
 	display_altitude(baseCalib[4]);
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
-	display_chars(0, LCD_SEG_L2_5_0, "BASE 5", SEG_ON);
+	display_chars(0, LCD_SEG_L2_5_0, " PRE 5", SEG_SET);
 }
 void edit_base5_dsel(void)
 {
@@ -568,18 +490,91 @@ void edit_base5_set(int8_t step)
 }
 
 
+void edit_consumption_sel(void)
+{	
+	
+	_printf(0, LCD_SEG_L1_1_0, "%1u", consumption);
+	display_chars(0, LCD_SEG_L1_1_0, NULL, BLINK_ON);
+	display_chars(0, LCD_SEG_L2_4_0, "BATT", SEG_SET);
+}
+void edit_consumption_dsel(void)
+{
+	display_chars(0, LCD_SEG_L1_1_0, NULL, BLINK_OFF);
+	display_clear(0,0);
+}
+void edit_consumption_set(int8_t step)
+{	
+	helpers_loop_s16(&consumption, 1, 4, step);
+	_printf(0, LCD_SEG_L1_1_0, "%1u", consumption);
+}
+
+
+void edit_unit_sel(void)
+{	
+	if(useMetric){
+		display_chars(0, LCD_SEG_L1_2_1, "M", SEG_SET);
+		display_symbol(0, LCD_UNIT_L1_M, SEG_ON);
+		display_symbol(0, LCD_UNIT_L1_FT, SEG_OFF);
+	}else{
+		display_chars(0, LCD_SEG_L1_2_1, "FT", SEG_SET);
+		display_symbol(0, LCD_UNIT_L1_M, SEG_OFF);
+		display_symbol(0, LCD_UNIT_L1_FT, SEG_ON);
+	}
+	display_chars(0, LCD_SEG_L1_2_1, NULL, BLINK_ON);
+	display_chars(0, LCD_SEG_L2_3_0, "UNIT", SEG_SET);
+}
+void edit_unit_dsel(void)
+{
+	display_chars(0, LCD_SEG_L1_2_1, NULL, BLINK_OFF);
+	display_clear(0,0);
+}
+void edit_unit_set(int8_t step)
+{
+	if(useMetric){
+		useMetric = 0;
+		display_chars(0, LCD_SEG_L1_2_1, "FT", SEG_SET);
+		display_symbol(0, LCD_UNIT_L1_M, SEG_OFF);
+		display_symbol(0, LCD_UNIT_L1_FT, SEG_ON);
+	}else{
+		useMetric = 1;
+		display_clear(0,1);
+		display_chars(0, LCD_SEG_L1_2_1, "M", SEG_SET);
+		display_symbol(0, LCD_UNIT_L1_M, SEG_ON);
+		display_symbol(0, LCD_UNIT_L1_FT, SEG_OFF);
+	}
+}
+
+
+void edit_filter_sel(void)
+{	
+	if(useFilter){
+		display_chars(0, LCD_SEG_L1_2_0, "OFF", SEG_SET);
+	}else{
+		display_chars(0, LCD_SEG_L1_2_1, "ON", SEG_SET);
+	}
+	display_chars(0, LCD_SEG_L1_2_0, NULL, BLINK_ON);
+	display_chars(0, LCD_SEG_L2_4_0, "FLT", SEG_SET);
+}
+void edit_filter_dsel(void)
+{
+	display_chars(0, LCD_SEG_L1_2_0, NULL, BLINK_OFF);
+	display_clear(0,0);
+}
+void edit_filter_set(int8_t step)
+{
+	if(useFilter){
+		useFilter = 0;
+		display_chars(0, LCD_SEG_L1_2_0, "OFF", SEG_SET);
+	}else{
+		useFilter = 1;
+		display_clear(0,1);
+		display_chars(0, LCD_SEG_L1_2_1, "ON", SEG_SET);
+	}
+}
+
 static void edit_save()
 {
-	/*
-#ifndef CONFIG_MOD_ALTITUDE_METRIC
-	 // When using English units, convert ft back to m before updating pressure table
-	altitudeCalib = convert_ft_to_m(altitudeCalib);
-#endif
-	
-	sAlt.altitude = altitudeCalib;
-	update_pressure_table(sAlt.altitude, sAlt.pressure, sAlt.temperature);
-*/
-	sys_messagebus_register(&update, SYS_MSG_TIMER_4S);
+	sys_messagebus_register(&update, consumption_array[consumption-1]);
 	update();
 }
 
@@ -589,6 +584,9 @@ static struct menu_editmode_item edit_items[] = {
 	{&edit_base3_sel, &edit_base3_dsel, &edit_base3_set},
 	{&edit_base4_sel, &edit_base4_dsel, &edit_base4_set},
 	{&edit_base5_sel, &edit_base5_dsel, &edit_base5_set},
+	{&edit_consumption_sel, &edit_consumption_dsel, &edit_consumption_set},
+	{&edit_unit_sel, &edit_unit_dsel, &edit_unit_set},
+	{&edit_filter_sel, &edit_filter_dsel, &edit_filter_set},
 	{ NULL },
 };
 
@@ -605,18 +603,18 @@ void calib_callback(void)
 {
 	if(submenuState != 0){
 
-#ifndef CONFIG_MOD_ALTITUDE_METRIC
-		// When using English units, convert ft back to m before updating pressure table
-		sAlt.altitude = convert_ft_to_m(baseCalib[submenuState -1]);
-#else
-		sAlt.altitude = baseCalib[submenuState -1];
-#endif
-		
-		update_pressure_table(sAlt.altitude, sAlt.pressure, sAlt.temperature);
-		buzzer_play(bip);
-		update();
-		submenuState = 0;
-		display_clear(0,2);
+		if(useMetric){
+			sAlt.altitude = baseCalib[submenuState -1];
+		}else{
+			// When using English units, convert ft back to m before updating pressure table
+			sAlt.altitude = convert_ft_to_m(baseCalib[submenuState -1]);
+		}
+			
+			update_pressure_table(sAlt.altitude, sAlt.pressure, sAlt.temperature);
+			buzzer_play(bip);
+			update();
+			submenuState = 0;
+			display_clear(0,2);
 	}
 }
 
@@ -628,15 +626,15 @@ void submenu_callback(void)
 	switch(submenuState){
 		case 0: display_clear(0,2);
 				break;
-		case 1: display_chars(0, LCD_SEG_L2_5_0, "BASE 1", SEG_SET);
+		case 1: display_chars(0, LCD_SEG_L2_5_0, " PRE 1", SEG_SET);
 				break;
-		case 2: display_chars(0, LCD_SEG_L2_5_0, "BASE 2", SEG_SET);
+		case 2: display_chars(0, LCD_SEG_L2_5_0, " PRE 2", SEG_SET);
 				break;
-		case 3: display_chars(0, LCD_SEG_L2_5_0, "BASE 3", SEG_SET);
+		case 3: display_chars(0, LCD_SEG_L2_5_0, " PRE 3", SEG_SET);
 				break;
-		case 4: display_chars(0, LCD_SEG_L2_5_0, "BASE 4", SEG_SET);
+		case 4: display_chars(0, LCD_SEG_L2_5_0, " PRE 4", SEG_SET);
 				break;
-		case 5: display_chars(0, LCD_SEG_L2_5_0, "BASE 5", SEG_SET);
+		case 5: display_chars(0, LCD_SEG_L2_5_0, " PRE 5", SEG_SET);
 				break;
 	}
 		
