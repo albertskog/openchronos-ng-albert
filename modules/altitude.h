@@ -48,9 +48,30 @@ extern void stop_altitude_measurement(void);
 extern void do_altitude_measurement(void);
 
 // menu functions
-extern void sx_altitude(u8 line);
-extern void mx_altitude(u8 line);
-extern void display_altitude(void);
+extern void edit_mode_callback(void);
+extern void submenu_callback(void);
+extern void calib_callback(void);
+extern void display_altitude(s16 alt);
+extern void update(void);
+extern void read_altitude(void);
+
+
+// edit mode functions
+extern void edit_base1_sel(void);
+extern void edit_base1_dsel(void);
+extern void edit_base1_set(int8_t step);
+extern void edit_base2_sel(void);
+extern void edit_base2_dsel(void);
+extern void edit_base2_set(int8_t step);
+extern void edit_base3_sel(void);
+extern void edit_base3_dsel(void);
+extern void edit_base3_set(int8_t step);
+extern void edit_base4_sel(void);
+extern void edit_base4_dsel(void);
+extern void edit_base4_set(int8_t step);
+extern void edit_base5_sel(void);
+extern void edit_base5_dsel(void);
+extern void edit_base5_set(int8_t step);
 
 extern const u8 int_to_array_conversion_table[][3];
 extern u8 *int_to_array(u32 n, u8 digits, u8 blanks);

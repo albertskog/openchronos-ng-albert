@@ -28,35 +28,38 @@
 #include "altitude.h"
 #include "drivers/ports.h"
 #include "drivers/timer.h"
+#include "drivers/buzzer.h"
 #include <string.h>
+
 
 
 // Global Variable section
 struct alt sAlt;
+note bip[2] = {0x4b08,0x000F};
 
 uint8_t altitudeEnabled;
-s16 altitudeCalib;
-s16 baseCalib[5];
+s16 baseCalib[5] = {CONFIG_MOD_ALTITUDE_BASE1,
+	CONFIG_MOD_ALTITUDE_BASE2,
+	CONFIG_MOD_ALTITUDE_BASE3,
+	CONFIG_MOD_ALTITUDE_BASE4,
+	CONFIG_MOD_ALTITUDE_BASE5
+};
+s32 limit_high, limit_low;
+uint8_t submenuState = 0;
 
 static void altitude_activate(void)
 {
 	altitudeEnabled = 1;
 	/* display -- symbol while a measure is not performed */
-	display_chars(0, LCD_SEG_L1_2_0, "---", SEG_ON);
-	
-#ifdef CONFIG_MOD_ALTITUDE_METRIC
-	display_symbol(0, LCD_UNIT_L1_M, SEG_ON);
-#else
-	display_symbol(0, LCD_UNIT_L1_FT, SEG_ON);
-#endif
+	display_chars(0, LCD_SEG_L1_3_0, "----", SEG_ON);
 
-	//sys_messagebus_register(&display_altitude, SYS_MSG_RTC_SECOND);
-	sys_messagebus_register(&display_altitude, SYS_MSG_TIMER_4S);
+	//sys_messagebus_register(&update, SYS_MSG_RTC_SECOND);
+	sys_messagebus_register(&update, SYS_MSG_TIMER_4S);
 }
 
 static void altitude_deactivate(void)
 {
-	sys_messagebus_unregister(&display_altitude);
+	sys_messagebus_unregister(&update);
 	altitudeEnabled = 0;
 	
 	
@@ -79,12 +82,23 @@ static void altitude_deactivate(void)
 void mod_altitude_init(void)
 {
 	menu_add_entry(" ALTI", NULL, NULL,
-		NULL, &mx_altitude, NULL, NULL,
+		&submenu_callback, &edit_mode_callback, &calib_callback, NULL,
 		&altitude_activate, &altitude_deactivate);
 	
 	altitudeEnabled = 0;
 	sAlt.pressure = 0;
 	reset_altitude_measurement();
+	
+// Set lower and upper limits for offset correction
+#ifdef CONFIG_MOD_ALTITUDE_METRIC
+	// Limits for set_value function
+	limit_low = -100;
+	limit_high = 4000;
+#else
+// Limits for set_value function
+	limit_low = -500;
+	limit_high = 9999;
+#endif
 }
 
 // *************************************************************************************************
@@ -280,82 +294,17 @@ void do_altitude_measurement()
     sAlt.altitude = conv_pa_to_meter(sAlt.pressure, sAlt.temperature);
 }
 
-// *************************************************************************************************
-// @fn          sx_altitude
-// @brief       Altitude direct function.
-// @param       u8 line LINE1, LINE2
-// @return      none
-// *************************************************************************************************
-void sx_altitude(u8 line)
+void update(void)
 {
-    // Function can be empty
-    // Restarting of altitude measurement will be done by subsequent full display update
+	read_altitude();
+	display_altitude(sAlt.altitude);
 }
 
-static void edit_offset_sel(void)
+void read_altitude(void)
 {
-#ifdef CONFIG_MOD_ALTITUDE_METRIC
-	altitudeCalib = sAlt.altitude;
-#else
-	altitudeCalib = convert_m_to_ft(sAlt.altitude);
-#endif
-	_printf(0, LCD_SEG_L2_4_0, "%04s", altitudeCalib);
-	display_chars(0, LCD_SEG_L2_4_0, NULL, BLINK_ON);
-}
-static void edit_offset_dsel(void)
-{
-	display_chars(0, LCD_SEG_L2_3_0, NULL, BLINK_OFF);
-	display_clear(0,2);
-}
-static void edit_offset_set(int8_t step)
-{
-    s32 limit_high, limit_low;
-
-    // Set lower and upper limits for offset correction
-#ifdef CONFIG_MOD_ALTITUDE_METRIC
-	// Limits for set_value function
-	limit_low = -100;
-	limit_high = 4000;
-#else
-	// Limits for set_value function
-	limit_low = -500;
-	limit_high = 9999;
-#endif
-	
-	helpers_loop_s16(&altitudeCalib, limit_low, limit_high, step);
-	
-	_printf(0, LCD_SEG_L2_4_0, "%04s", altitudeCalib);
-
-}
-
-
-static void edit_save()
-{
-#ifndef CONFIG_MOD_ALTITUDE_METRIC
-	 // When using English units, convert ft back to m before updating pressure table
-	altitudeCalib = convert_ft_to_m(altitudeCalib);
-#endif
-	
-	sAlt.altitude = altitudeCalib;
-	update_pressure_table(sAlt.altitude, sAlt.pressure, sAlt.temperature);
-	display_altitude();
-}
-
-static struct menu_editmode_item edit_items[] = {
-	{&edit_offset_sel, &edit_offset_dsel, &edit_offset_set},
-	{ NULL },
-};
-
-
-// *************************************************************************************************
-// @fn          mx_altitude
-// @brief       Mx button handler to set the altitude offset.
-// @param       u8 line         LINE1
-// @return      none
-// *************************************************************************************************
-void mx_altitude(u8 line)
-{
-		menu_editmode_start(&edit_save, edit_items);
+	// Start measurement
+	start_altitude_measurement();
+	stop_altitude_measurement();
 }
 
 // *************************************************************************************************
@@ -366,65 +315,62 @@ void mx_altitude(u8 line)
 // DISPLAY_LINE_UPDATE_PARTIAL, DISPLAY_LINE_CLEAR
 // @return      none
 // *************************************************************************************************
-void display_altitude(void)
+void display_altitude(s16 alt)
 {
     u8 *str;
     s16 ft;
+	u16 value;
 
-	// Start measurement
-	start_altitude_measurement();
-	
-	// Update display only while measurement is active
-	if (sAlt.timeout > 0)
-	{
 		
 #ifdef CONFIG_MOD_ALTITUDE_METRIC
-		// Display altitude in xxxx m format, allow 3 leading blank digits
-		if (sAlt.altitude >= 0)
-		{
-			str = int_to_array(sAlt.altitude, 4, 3);
-			display_symbol(0,LCD_SYMB_ARROW_UP, SEG_ON);
-			display_symbol(0,LCD_SYMB_ARROW_DOWN, SEG_OFF);
-		}
-		else
-		{
-			str = int_to_array(sAlt.altitude * (-1), 4, 3);
-			display_symbol(0,LCD_SYMB_ARROW_UP, SEG_OFF);
-			display_symbol(0,LCD_SYMB_ARROW_DOWN, SEG_ON);
-		}
+	// Display altitude in xxxx m format, allow 3 leading blank digits
+	if (alt >= 0)
+	{
+		value = alt;
+		//str = int_to_array(alt, 4, 3);
+		display_symbol(0,LCD_SYMB_ARROW_UP, SEG_ON);
+		display_symbol(0,LCD_SYMB_ARROW_DOWN, SEG_OFF);
+	}
+	else
+	{
+		value = alt * (-1);
+		//str = int_to_array(alt, 4, 3);
+		display_symbol(0,LCD_SYMB_ARROW_UP, SEG_OFF);
+		display_symbol(0,LCD_SYMB_ARROW_DOWN, SEG_ON);
+	}
+	display_symbol(0, LCD_UNIT_L1_M, SEG_ON);
 #else
 
-		// Convert from meters to feet
-		ft = convert_m_to_ft(sAlt.altitude);
+	// Convert from meters to feet
+	ft = convert_m_to_ft(alt);
 
-		// Limit to 9999ft (3047m)
-		if (ft > 9999)
-			ft = 9999;
+	// Limit to 9999ft (3047m)
+	if (ft > 9999)
+		ft = 9999;
 
-		// Display altitude in xxxx ft format, allow 3 leading blank digits
-		if (ft >= 0)
-		{
-			str = int_to_array(ft, 4, 3);
-			display_symbol(0, LCD_SYMB_ARROW_UP, SEG_ON);
-			display_symbol(0, LCD_SYMB_ARROW_DOWN, SEG_OFF);
-		}
-		else
-		{
-			str = int_to_array(ft * (-1), 4, 3);
-			display_symbol(0, LCD_SYMB_ARROW_UP, SEG_OFF);
-			display_symbol(0, LCD_SYMB_ARROW_DOWN, SEG_ON);
-		}
-				
-#endif
-		
-		display_chars(0, LCD_SEG_L1_3_0, str, SEG_SET);
+	// Display altitude in xxxx ft format, allow 3 leading blank digits
+	if (ft >= 0)
+	{
+		value = ft;
+		//str = int_to_array(ft, 4, 3);
+		display_symbol(0, LCD_SYMB_ARROW_UP, SEG_ON);
+		display_symbol(0, LCD_SYMB_ARROW_DOWN, SEG_OFF);
 	}
-   
-        stop_altitude_measurement();
-
+	else
+	{
+		value = ft * -1;
+		//str = int_to_array(ft, 4, 3);
+		display_symbol(0, LCD_SYMB_ARROW_UP, SEG_OFF);
+		display_symbol(0, LCD_SYMB_ARROW_DOWN, SEG_ON);
+	}
+	display_symbol(0, LCD_UNIT_L1_FT, SEG_ON);
+#endif
+	
+	_printf(0, LCD_SEG_L1_3_0, "%4u", value);
+	//display_chars(0, LCD_SEG_L1_3_0, str, SEG_SET);
 }
 
-
+/*
 
 // Quick integer to array conversion table for most common integer values
 const u8 int_to_array_conversion_table[][3] = {
@@ -513,4 +459,185 @@ u8 *int_to_array(u32 n, u8 digits, u8 blanks)
     }
 
     return (int_to_array_str);
+}
+
+*/
+
+
+
+void edit_base1_sel(void)
+{	
+	display_altitude(baseCalib[0]);
+	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
+	display_chars(0, LCD_SEG_L2_5_0, "BASE 1", SEG_ON);
+}
+void edit_base1_dsel(void)
+{
+	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
+	display_clear(0,0);
+}
+void edit_base1_set(int8_t step)
+{	
+	helpers_loop_s16(&baseCalib[0], limit_low, limit_high, step);
+	
+	display_altitude(baseCalib[0]);
+
+}
+
+
+
+void edit_base2_sel(void)
+{	
+	display_altitude(baseCalib[1]);
+	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
+	display_chars(0, LCD_SEG_L2_5_0, "BASE 2", SEG_ON);
+}
+void edit_base2_dsel(void)
+{
+	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
+	display_clear(0,0);
+}
+void edit_base2_set(int8_t step)
+{	
+	helpers_loop_s16(&baseCalib[1], limit_low, limit_high, step);
+	
+	display_altitude(baseCalib[1]);
+
+}
+
+
+
+void edit_base3_sel(void)
+{	
+	display_altitude(baseCalib[2]);
+	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
+	display_chars(0, LCD_SEG_L2_5_0, "BASE 3", SEG_ON);
+}
+void edit_base3_dsel(void)
+{
+	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
+	display_clear(0,0);
+}
+void edit_base3_set(int8_t step)
+{	
+	helpers_loop_s16(&baseCalib[2], limit_low, limit_high, step);
+	
+	display_altitude(baseCalib[2]);
+
+}
+
+
+
+void edit_base4_sel(void)
+{	
+	display_altitude(baseCalib[3]);
+	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
+	display_chars(0, LCD_SEG_L2_5_0, "BASE 4", SEG_ON);
+}
+void edit_base4_dsel(void)
+{
+	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
+	display_clear(0,0);
+}
+void edit_base4_set(int8_t step)
+{	
+	helpers_loop_s16(&baseCalib[3], limit_low, limit_high, step);
+	
+	display_altitude(baseCalib[3]);
+
+}
+
+
+void edit_base5_sel(void)
+{	
+	display_altitude(baseCalib[4]);
+	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
+	display_chars(0, LCD_SEG_L2_5_0, "BASE 5", SEG_ON);
+}
+void edit_base5_dsel(void)
+{
+	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
+	display_clear(0,0);
+}
+void edit_base5_set(int8_t step)
+{	
+	helpers_loop_s16(&baseCalib[4], limit_low, limit_high, step);
+	
+	display_altitude(baseCalib[4]);
+
+}
+
+
+static void edit_save()
+{
+	/*
+#ifndef CONFIG_MOD_ALTITUDE_METRIC
+	 // When using English units, convert ft back to m before updating pressure table
+	altitudeCalib = convert_ft_to_m(altitudeCalib);
+#endif
+	
+	sAlt.altitude = altitudeCalib;
+	update_pressure_table(sAlt.altitude, sAlt.pressure, sAlt.temperature);
+*/
+	sys_messagebus_register(&update, SYS_MSG_TIMER_4S);
+	update();
+}
+
+static struct menu_editmode_item edit_items[] = {
+	{&edit_base1_sel, &edit_base1_dsel, &edit_base1_set},
+	{&edit_base2_sel, &edit_base2_dsel, &edit_base2_set},
+	{&edit_base3_sel, &edit_base3_dsel, &edit_base3_set},
+	{&edit_base4_sel, &edit_base4_dsel, &edit_base4_set},
+	{&edit_base5_sel, &edit_base5_dsel, &edit_base5_set},
+	{ NULL },
+};
+
+
+
+void edit_mode_callback(void)
+{
+	sys_messagebus_unregister(&update);
+	menu_editmode_start(&edit_save, edit_items);
+}
+
+
+void calib_callback(void)
+{
+	if(submenuState != 0){
+
+#ifndef CONFIG_MOD_ALTITUDE_METRIC
+		// When using English units, convert ft back to m before updating pressure table
+		sAlt.altitude = convert_ft_to_m(baseCalib[submenuState -1]);
+#else
+		sAlt.altitude = baseCalib[submenuState -1];
+#endif
+		
+		update_pressure_table(sAlt.altitude, sAlt.pressure, sAlt.temperature);
+		buzzer_play(bip);
+		update();
+		submenuState = 0;
+		display_clear(0,2);
+	}
+}
+
+void submenu_callback(void)
+{
+	submenuState++;
+	if(submenuState == 6) submenuState = 0;
+	
+	switch(submenuState){
+		case 0: display_clear(0,2);
+				break;
+		case 1: display_chars(0, LCD_SEG_L2_5_0, "BASE 1", SEG_SET);
+				break;
+		case 2: display_chars(0, LCD_SEG_L2_5_0, "BASE 2", SEG_SET);
+				break;
+		case 3: display_chars(0, LCD_SEG_L2_5_0, "BASE 3", SEG_SET);
+				break;
+		case 4: display_chars(0, LCD_SEG_L2_5_0, "BASE 4", SEG_SET);
+				break;
+		case 5: display_chars(0, LCD_SEG_L2_5_0, "BASE 5", SEG_SET);
+				break;
+	}
+		
 }
