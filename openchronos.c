@@ -65,7 +65,10 @@
 /* Driver */
 #include <drivers/display.h>
 #include <drivers/vti_as.h>
-#include <drivers/vti_ps.h>
+//#include <drivers/vti_ps.h>
+//#include <drivers/cma_ps.h>
+#include <drivers/bmp_ps.h>
+#include <drivers/ps.h>
 #include <drivers/radio.h>
 #include <drivers/buzzer.h>
 #include <drivers/ports.h>
@@ -122,6 +125,9 @@ static struct {
 
 /* the message bus */
 static struct sys_messagebus *messagebus;
+
+// Global flag set if Bosch sensors are used
+u8 bmp_used;
 
 /***************************************************************************
  ************************* THE SYSTEM MESSAGE BUS **************************
@@ -467,7 +473,18 @@ void init_application(void)
 
 	// ---------------------------------------------------------------------
 	// Init pressure sensor
-	ps_init();
+	//ps_init();
+    bmp_ps_init();
+    // Bosch sensor not found?
+    if (!ps_ok)
+    {
+        bmp_used = 0;
+        //cma_ps_init();
+    }
+    else
+    {
+    	bmp_used = 1;
+    }
 
 	/* drivers/battery */
 	battery_init();
@@ -542,6 +559,32 @@ void helpers_loop(uint8_t *value, uint8_t lower, uint8_t upper, int8_t step)
 	} else {
 		/* prevent overflow */
 		if (*value == 0) {
+			*value = upper;
+			return;
+		}
+
+		(*value)--;
+		if(*value +1 == lower)
+			*value = upper;
+	}
+}
+
+void helpers_loop_s16(int16_t *value, int16_t lower, int16_t upper, int8_t step)
+{
+	/* for now only increase/decrease on steps of 1 value */
+	if (step > 0) {
+		/* prevent overflow */
+		if (*value == 32767) {
+			*value = lower;
+			return;
+		}
+
+		(*value)++;
+		if(*value -1 == upper)
+			*value = lower;
+	} else {
+		/* prevent overflow */
+		if (*value == -32768) {
 			*value = upper;
 			return;
 		}

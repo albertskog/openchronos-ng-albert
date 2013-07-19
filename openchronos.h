@@ -95,6 +95,12 @@ void helpers_loop(
 	int8_t step     /*!< 1 for incrementing value, -1 for a decrement */
 );
 
+void helpers_loop_s16(
+	int16_t *value, 
+	int16_t lower, 
+	int16_t upper, 
+	int8_t step
+);
 
 /*!
 	\brief List of possible message types for the message bus.
