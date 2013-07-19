@@ -66,7 +66,7 @@
 #include <drivers/display.h>
 #include <drivers/vti_as.h>
 //#include <drivers/vti_ps.h>
-//#include <drivers/cma_ps.h>
+#include <drivers/cma_ps.h>
 #include <drivers/bmp_ps.h>
 #include <drivers/ps.h>
 #include <drivers/radio.h>
@@ -479,7 +479,7 @@ void init_application(void)
     if (!ps_ok)
     {
         bmp_used = 0;
-        //cma_ps_init();
+        cma_ps_init();
     }
     else
     {
