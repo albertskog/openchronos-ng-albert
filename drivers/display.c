@@ -461,7 +461,7 @@ void lcd_screen_activate(uint8_t scr_nr)
 }
 
 
-static uint8_t lcd_screen_currentscreen(void)
+uint8_t lcd_screen_currentscreen(void)
 {
 	return display_activescr;
 }

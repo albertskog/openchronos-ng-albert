@@ -41,18 +41,15 @@
 
 // *************************************************************************************************
 // Prototypes section
-extern void reset_altitude_measurement(void);
-extern u8 is_altitude_measurement(void);
-extern void start_altitude_measurement(void);
-extern void stop_altitude_measurement(void);
-extern void do_altitude_measurement(void);
+
+
 
 // menu functions
 extern void edit_mode_callback(void);
 extern void submenu_callback(void);
 extern void calib_callback(void);
-extern void display_altitude(s16 alt, uint8_t scr);
-extern void update(void);
+extern void display_altitude(int16_t alt, uint8_t scr);
+extern void update(enum sys_message);
 extern void read_altitude(void);
 
 
@@ -85,29 +82,16 @@ extern void up_callback(void);
 extern void screenTimeout(void);
 
 
-extern const u8 int_to_array_conversion_table[][3];
-extern u8 *int_to_array(u32 n, u8 digits, u8 blanks);
+extern const uint8_t int_to_array_conversion_table[][3];
+extern uint8_t *int_to_array(uint32_t n, uint8_t digits, uint8_t blanks);
 
 // *************************************************************************************************
 // Defines section
-#define ALTITUDE_MEASUREMENT_TIMEOUT    (60 * 60u) // Stop altitude measurement after 60 minutes to
-                                                   // save battery
+
 
 // *************************************************************************************************
 // Global Variable section
-struct alt
-{
-    u32 pressure;                                  // Pressure (Pa)
-    u16 temperature;                               // Temperature (K)
-    s16 altitude;                                  // Altitude (m)
-    s16 altitude_offset;                           // Altitude offset stored during calibration
-    u16 timeout;                                   // Timeout
-    s16 maxAltitude;
-	s16 minAltitude;
-	s16 accuClimbUp;
-	s16 accuClimbDown;
-};
-extern struct alt sAlt;
+
 
 // *************************************************************************************************
 // Extern section

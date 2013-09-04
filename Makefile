@@ -1,4 +1,4 @@
-SUBDIRS = drivers modules
+SUBDIRS = drivers libs modules 
 
 include Common.mk
 
