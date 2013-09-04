@@ -460,6 +460,12 @@ void lcd_screen_activate(uint8_t scr_nr)
 	display_screens[display_activescr].blkmem = LCD_BLK_MEM;
 }
 
+
+static uint8_t lcd_screen_currentscreen(void)
+{
+	return display_activescr;
+}
+
 void display_clear(uint8_t scr_nr, uint8_t line)
 {
 	if (line == 1) {

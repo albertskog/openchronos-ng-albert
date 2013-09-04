@@ -191,6 +191,8 @@ void lcd_screen_activate(
 	uint8_t scr_nr /*!< the screen number to activate, or 0xff */
 );
 
+uint8_t lcd_screen_currentscreen(void);
+
 /* Not to be used by modules */
 void start_blink(void);
 void stop_blink(void);

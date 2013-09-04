@@ -1,8 +1,5 @@
 /*
-    temperature.c: temperature display module
-
-    Copyright (C) 2012 Angelo Arrifano <miknix@gmail.com>
-    Copyright (C) 2012 Matthew Excell <matt@excellclan.com>
+    altitude.c: altitude display module. Based on TI firmware 1.8
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -66,6 +63,9 @@ uint8_t useFilter = 1;
 uint8_t useFilter = 0;
 #endif
 
+
+s16 oldAccuAltitude;
+
 static void altitude_activate(void)
 {
 	altitudeEnabled = 1;
@@ -74,6 +74,12 @@ static void altitude_activate(void)
 
 	//sys_messagebus_register(&update, SYS_MSG_RTC_SECOND);
 	sys_messagebus_register(&update, consumption_array[consumption-1]);
+    
+    lcd_screens_create(5);
+    display_chars(1, LCD_SEG_L2_5_0, " MIN  ", SEG_SET);
+    display_chars(2, LCD_SEG_L2_5_0, " MAX  ", SEG_SET);
+    display_chars(3, LCD_SEG_L2_5_0, " ACC N", SEG_SET);
+    display_chars(4, LCD_SEG_L2_5_0, " ACC P", SEG_SET);
 }
 
 static void altitude_deactivate(void)
@@ -95,12 +101,14 @@ static void altitude_deactivate(void)
 	
 	
 	update_pressure_table((s16) sAlt.altitude, sAlt.pressure, sAlt.temperature);
+    
+    lcd_screens_destroy();
 }
 
 
 void mod_altitude_init(void)
 {
-	menu_add_entry(" ALTI", NULL, NULL,
+	menu_add_entry(" ALTI", &up_callback, NULL,
 		&submenu_callback, &edit_mode_callback, &calib_callback, NULL,
 		&altitude_activate, &altitude_deactivate);
 	
@@ -137,6 +145,11 @@ void reset_altitude_measurement(void)
 
     // Set default altitude value
     sAlt.altitude = 0;
+	sAlt.maxAltitude = 0;
+	sAlt.minAltitude = 0;
+	sAlt.accuClimbUp = 0;
+	sAlt.accuClimbDown = 0;
+	oldAccuAltitude = 0;
 
     // Pressure sensor ok?
     if (ps_ok)
@@ -311,12 +324,45 @@ void do_altitude_measurement()
     
     // Convert pressure (Pa) and temperature (K) to altitude (m)
     sAlt.altitude = conv_pa_to_meter(sAlt.pressure, sAlt.temperature);
+	
+	if(sAlt.altitude > sAlt.maxAltitude){
+		sAlt.maxAltitude = sAlt.altitude;
+	}
+	
+	if(sAlt.altitude < sAlt.minAltitude){
+		sAlt.minAltitude = sAlt.altitude;
+	}
+	
+	if((sAlt.altitude > oldAccuAltitude) && (sAlt.altitude - oldAccuAltitude > 1)){
+		sAlt.accuClimbUp += sAlt.altitude - oldAccuAltitude;
+		oldAccuAltitude = sAlt.altitude;
+	}
+	
+	if((sAlt.altitude < oldAccuAltitude) && (oldAccuAltitude - sAlt.altitude > 1)){
+		sAlt.accuClimbDown -= oldAccuAltitude - sAlt.altitude;
+		oldAccuAltitude = sAlt.altitude;
+	}
+	
+	if(sAlt.altitude < sAlt.minAltitude){
+        sAlt.minAltitude = sAlt.altitude;
+    }
+    
+    if(sAlt.altitude > sAlt.maxAltitude){
+        sAlt.maxAltitude = sAlt.altitude;
+    }
 }
 
 void update(void)
 {
 	read_altitude();
-	display_altitude(sAlt.altitude);
+    
+	display_altitude(sAlt.altitude, 0);
+    
+    display_altitude(sAlt.minAltitude, 1);
+	display_altitude(sAlt.maxAltitude, 2);
+    
+    display_altitude(sAlt.accuClimbDown, 3);
+    display_altitude(sAlt.accuClimbUp, 4);
 }
 
 void read_altitude(void)
@@ -334,9 +380,8 @@ void read_altitude(void)
 // DISPLAY_LINE_UPDATE_PARTIAL, DISPLAY_LINE_CLEAR
 // @return      none
 // *************************************************************************************************
-void display_altitude(s16 alt)
+void display_altitude(s16 alt, uint8_t scr)
 {
-    u8 *str;
     s16 ft;
 	u16 value;
 
@@ -346,16 +391,16 @@ void display_altitude(s16 alt)
 		if (alt >= 0)
 		{
 			value = alt;
-			display_symbol(0,LCD_SYMB_ARROW_UP, SEG_ON);
-			display_symbol(0,LCD_SYMB_ARROW_DOWN, SEG_OFF);
+			display_symbol(scr, LCD_SYMB_ARROW_UP, SEG_ON);
+			display_symbol(scr, LCD_SYMB_ARROW_DOWN, SEG_OFF);
 		}
 		else
 		{
 			value = alt * (-1);
-			display_symbol(0,LCD_SYMB_ARROW_UP, SEG_OFF);
-			display_symbol(0,LCD_SYMB_ARROW_DOWN, SEG_ON);
+			display_symbol(scr, LCD_SYMB_ARROW_UP, SEG_OFF);
+			display_symbol(scr, LCD_SYMB_ARROW_DOWN, SEG_ON);
 		}
-		display_symbol(0, LCD_UNIT_L1_M, SEG_ON);
+		display_symbol(scr, LCD_UNIT_L1_M, SEG_ON);
 	}else{
 
 		// Convert from meters to feet
@@ -369,19 +414,19 @@ void display_altitude(s16 alt)
 		if (ft >= 0)
 		{
 			value = ft;
-			display_symbol(0, LCD_SYMB_ARROW_UP, SEG_ON);
-			display_symbol(0, LCD_SYMB_ARROW_DOWN, SEG_OFF);
+			display_symbol(scr, LCD_SYMB_ARROW_UP, SEG_ON);
+			display_symbol(scr, LCD_SYMB_ARROW_DOWN, SEG_OFF);
 		}
 		else
 		{
 			value = ft * -1;
-			display_symbol(0, LCD_SYMB_ARROW_UP, SEG_OFF);
-			display_symbol(0, LCD_SYMB_ARROW_DOWN, SEG_ON);
+			display_symbol(scr, LCD_SYMB_ARROW_UP, SEG_OFF);
+			display_symbol(scr, LCD_SYMB_ARROW_DOWN, SEG_ON);
 		}
-		display_symbol(0, LCD_UNIT_L1_FT, SEG_ON);
+		display_symbol(scr, LCD_UNIT_L1_FT, SEG_ON);
 	}
 	
-	_printf(0, LCD_SEG_L1_3_0, "%4u", value);
+	_printf(scr, LCD_SEG_L1_3_0, "%4u", value);
 }
 
 
@@ -389,20 +434,20 @@ void display_altitude(s16 alt)
 
 void edit_base1_sel(void)
 {	
-	display_altitude(baseCalib[0]);
+	display_altitude(baseCalib[0], 0);
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
 	display_chars(0, LCD_SEG_L2_5_0, " PRE 1", SEG_SET);
 }
 void edit_base1_dsel(void)
 {
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
-	display_clear(0,0);
+	display_clear(0, 0);
 }
 void edit_base1_set(int8_t step)
 {	
 	helpers_loop_s16(&baseCalib[0], limit_low, limit_high, step);
 	
-	display_altitude(baseCalib[0]);
+	display_altitude(baseCalib[0], 0);
 
 }
 
@@ -410,20 +455,20 @@ void edit_base1_set(int8_t step)
 
 void edit_base2_sel(void)
 {	
-	display_altitude(baseCalib[1]);
+	display_altitude(baseCalib[1], 0);
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
 	display_chars(0, LCD_SEG_L2_5_0, " PRE 2", SEG_SET);
 }
 void edit_base2_dsel(void)
 {
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
-	display_clear(0,0);
+	display_clear(0, 0);
 }
 void edit_base2_set(int8_t step)
 {	
 	helpers_loop_s16(&baseCalib[1], limit_low, limit_high, step);
 	
-	display_altitude(baseCalib[1]);
+	display_altitude(baseCalib[1], 0);
 
 }
 
@@ -431,20 +476,20 @@ void edit_base2_set(int8_t step)
 
 void edit_base3_sel(void)
 {	
-	display_altitude(baseCalib[2]);
+	display_altitude(baseCalib[2], 0);
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
 	display_chars(0, LCD_SEG_L2_5_0, " PRE 3", SEG_SET);
 }
 void edit_base3_dsel(void)
 {
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
-	display_clear(0,0);
+	display_clear(0, 0);
 }
 void edit_base3_set(int8_t step)
 {	
 	helpers_loop_s16(&baseCalib[2], limit_low, limit_high, step);
 	
-	display_altitude(baseCalib[2]);
+	display_altitude(baseCalib[2], 0);
 
 }
 
@@ -452,40 +497,40 @@ void edit_base3_set(int8_t step)
 
 void edit_base4_sel(void)
 {	
-	display_altitude(baseCalib[3]);
+	display_altitude(baseCalib[3], 0);
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
 	display_chars(0, LCD_SEG_L2_5_0, " PRE 4", SEG_SET);
 }
 void edit_base4_dsel(void)
 {
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
-	display_clear(0,0);
+	display_clear(0, 0);
 }
 void edit_base4_set(int8_t step)
 {	
 	helpers_loop_s16(&baseCalib[3], limit_low, limit_high, step);
 	
-	display_altitude(baseCalib[3]);
+	display_altitude(baseCalib[3], 0);
 
 }
 
 
 void edit_base5_sel(void)
 {	
-	display_altitude(baseCalib[4]);
+	display_altitude(baseCalib[4], 0);
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
 	display_chars(0, LCD_SEG_L2_5_0, " PRE 5", SEG_SET);
 }
 void edit_base5_dsel(void)
 {
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
-	display_clear(0,0);
+	display_clear(0, 0);
 }
 void edit_base5_set(int8_t step)
 {	
 	helpers_loop_s16(&baseCalib[4], limit_low, limit_high, step);
 	
-	display_altitude(baseCalib[4]);
+	display_altitude(baseCalib[4], 0);
 
 }
 
@@ -500,7 +545,7 @@ void edit_consumption_sel(void)
 void edit_consumption_dsel(void)
 {
 	display_chars(0, LCD_SEG_L1_1_0, NULL, BLINK_OFF);
-	display_clear(0,0);
+	display_clear(0, 0);
 }
 void edit_consumption_set(int8_t step)
 {	
@@ -609,12 +654,19 @@ void calib_callback(void)
 			// When using English units, convert ft back to m before updating pressure table
 			sAlt.altitude = convert_ft_to_m(baseCalib[submenuState -1]);
 		}
+		
+			sAlt.maxAltitude = sAlt.altitude;
+			sAlt.minAltitude = sAlt.altitude;
+			
+			oldAccuAltitude = sAlt.altitude;
+			sAlt.accuClimbUp = 0;
+			sAlt.accuClimbDown = 0;
 			
 			update_pressure_table(sAlt.altitude, sAlt.pressure, sAlt.temperature);
 			buzzer_play(bip);
 			update();
 			submenuState = 0;
-			display_clear(0,2);
+			display_clear(0, 2);
 	}
 }
 
@@ -624,7 +676,7 @@ void submenu_callback(void)
 	if(submenuState == 6) submenuState = 0;
 	
 	switch(submenuState){
-		case 0: display_clear(0,2);
+		case 0: display_clear(0 ,2);
 				break;
 		case 1: display_chars(0, LCD_SEG_L2_5_0, " PRE 1", SEG_SET);
 				break;
@@ -639,3 +691,23 @@ void submenu_callback(void)
 	}
 		
 }
+
+
+void up_callback(void)
+{
+    lcd_screen_activate(0xff);
+    //sys_messagebus_unregister(&screenTimeout);
+    //sys_messagebus_register(&screenTimeout, SYS_MSG_TIMER_4S);
+}
+
+void screenTimeout(void)
+{
+    lcd_screen_activate(0);
+}
+
+/*
+void down_callback(void)
+{
+    
+}
+*/

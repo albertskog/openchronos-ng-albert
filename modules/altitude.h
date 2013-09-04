@@ -51,7 +51,7 @@ extern void do_altitude_measurement(void);
 extern void edit_mode_callback(void);
 extern void submenu_callback(void);
 extern void calib_callback(void);
-extern void display_altitude(s16 alt);
+extern void display_altitude(s16 alt, uint8_t scr);
 extern void update(void);
 extern void read_altitude(void);
 
@@ -81,6 +81,8 @@ extern void edit_unit_set(int8_t step);
 extern void edit_filter_sel(void);
 extern void edit_filter_dsel(void);
 extern void edit_filter_set(int8_t step);
+extern void up_callback(void);
+extern void screenTimeout(void);
 
 
 extern const u8 int_to_array_conversion_table[][3];
@@ -100,6 +102,10 @@ struct alt
     s16 altitude;                                  // Altitude (m)
     s16 altitude_offset;                           // Altitude offset stored during calibration
     u16 timeout;                                   // Timeout
+    s16 maxAltitude;
+	s16 minAltitude;
+	s16 accuClimbUp;
+	s16 accuClimbDown;
 };
 extern struct alt sAlt;
 
