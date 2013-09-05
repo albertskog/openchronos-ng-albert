@@ -30,6 +30,7 @@ struct alt
     uint16_t timeout;                                   // Timeout
     int16_t maxAltitude;
     int16_t minAltitude;
+    uint8_t accu_threshold;
     int16_t accuClimbUp;
     int16_t accuClimbDown;
 };

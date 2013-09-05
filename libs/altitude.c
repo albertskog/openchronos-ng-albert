@@ -38,6 +38,8 @@ void reset_altitude_measurement(void)
         start_altitude_measurement();
         stop_altitude_measurement();
         
+        sAlt.accu_threshold = CONFIG_MOD_ALTITUDE_ACCU_THRESHOLD;
+        
         sAlt.altitude_calib =  sAlt.raw_altitude;
         sAlt.altitude_offset = sAlt.raw_altitude - sAlt.altitude_calib;
         
@@ -187,12 +189,12 @@ void do_altitude_measurement()
         sAlt.raw_minAltitude = sAlt.raw_altitude;
     }
     
-    if((sAlt.raw_altitude > oldAccuAltitude) && (sAlt.raw_altitude - oldAccuAltitude > 2)){
+    if((sAlt.raw_altitude > oldAccuAltitude) && (sAlt.raw_altitude - oldAccuAltitude > sAlt.accu_threshold)){
         sAlt.accuClimbUp += sAlt.raw_altitude - oldAccuAltitude;
         oldAccuAltitude = sAlt.raw_altitude;
     }
     
-    if((sAlt.raw_altitude < oldAccuAltitude) && (oldAccuAltitude - sAlt.raw_altitude > 2)){
+    if((sAlt.raw_altitude < oldAccuAltitude) && (oldAccuAltitude - sAlt.raw_altitude > sAlt.accu_threshold)){
         sAlt.accuClimbDown -= oldAccuAltitude - sAlt.raw_altitude;
         oldAccuAltitude = sAlt.raw_altitude;
     }

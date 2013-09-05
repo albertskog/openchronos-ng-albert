@@ -19,12 +19,16 @@
 
 /* drivers */
 #include "drivers/display.h"
-#include "modules/altitude.h"
 #include "drivers/ports.h"
 #include "drivers/timer.h"
-#include <string.h>
+#include <drivers/rtca.h>
 #include "libs/altitude.h"
 #include "libs/buzzer.h"
+#include "modules/altitude.h"
+
+#include <string.h>
+
+
 
 
 // Global Variable section
@@ -41,6 +45,7 @@ int16_t baseCalib[5] = {CONFIG_MOD_ALTITUDE_BASE1,
 
 int32_t limit_high, limit_low;
 uint8_t submenuState = 0;
+uint8_t accelerometer = 0;
 uint8_t consumption = CONFIG_MOD_ALTITUDE_CONSUMPTION;
 int16_t consumption_array[4] = {
 	SYS_MSG_RTC_MINUTE,
@@ -62,10 +67,18 @@ static void altitude_activate(void)
 
 	/* display -- symbol while a measure is not performed */
 	display_chars(0, LCD_SEG_L1_3_0, "----", SEG_SET);
+    update(SYS_MSG_FAKE);
 
 	sys_messagebus_register(&update, consumption_array[consumption-1]);
     
-    lcd_screens_create(5);
+    sys_messagebus_register(&time_callback, SYS_MSG_RTC_MINUTE
+                        | SYS_MSG_RTC_HOUR
+#ifdef CONFIG_MOD_CLOCK_BLINKCOL
+                        | SYS_MSG_RTC_SECOND
+#endif
+    );
+    
+    lcd_screens_create(6);
     display_chars(1, LCD_SEG_L2_5_0, " MIN  ", SEG_SET);
     display_chars(2, LCD_SEG_L2_5_0, " MAX  ", SEG_SET);
     display_chars(3, LCD_SEG_L2_5_0, " ACC N", SEG_SET);
@@ -75,6 +88,7 @@ static void altitude_activate(void)
 static void altitude_deactivate(void)
 {
 	sys_messagebus_unregister(&update);
+    sys_messagebus_unregister(&time_callback);
 	
 	
 	// Clean up function-specific segments before leaving function
@@ -97,7 +111,7 @@ static void altitude_deactivate(void)
 
 void mod_altitude_init(void)
 {
-	menu_add_entry(" ALTI", &up_callback, NULL,
+	menu_add_entry(" ALTI", &up_callback, &down_callback,
 		&submenu_callback, &edit_mode_callback, &calib_callback, NULL,
 		&altitude_activate, &altitude_deactivate);
 	
@@ -130,6 +144,13 @@ void update(enum sys_message msg)
     
     display_altitude(sAlt.accuClimbDown, 3);
     display_altitude(sAlt.accuClimbUp, 4);
+    
+    if((accelerometer == 1) &&(submenuState == 0)){
+        display_clear(0 ,2);
+        display_chars(0, LCD_SEG_L2_4_0, "ACCEL", SEG_SET);
+    }
+    
+    time_callback(SYS_MSG_RTC_HOUR  | SYS_MSG_RTC_MINUTE);
 }
 
 void read_altitude(void)
@@ -320,6 +341,24 @@ void edit_consumption_set(int8_t step)
 	_printf(0, LCD_SEG_L1_1_0, "%1u", consumption);
 }
 
+void edit_threshold_sel(void)
+{   
+    
+    _printf(0, LCD_SEG_L1_1_0, "%1u", sAlt.accu_threshold);
+    display_chars(0, LCD_SEG_L1_1_0, NULL, BLINK_ON);
+    display_chars(0, LCD_SEG_L2_4_0, "THRES", SEG_SET);
+}
+void edit_threshold_dsel(void)
+{
+    display_chars(0, LCD_SEG_L1_1_0, NULL, BLINK_OFF);
+    display_clear(0, 0);
+}
+void edit_threshold_set(int8_t step)
+{   
+    helpers_loop_s16(&sAlt.accu_threshold, 0, 9, step);
+    _printf(0, LCD_SEG_L1_1_0, "%1u", sAlt.accu_threshold);
+}
+
 
 void edit_unit_sel(void)
 {	
@@ -360,9 +399,9 @@ void edit_unit_set(int8_t step)
 void edit_filter_sel(void)
 {	
 	if(useFilter){
-		display_chars(0, LCD_SEG_L1_2_0, "OFF", SEG_SET);
-	}else{
 		display_chars(0, LCD_SEG_L1_2_1, "ON", SEG_SET);
+	}else{
+		display_chars(0, LCD_SEG_L1_2_0, "OFF", SEG_SET);
 	}
 	display_chars(0, LCD_SEG_L1_2_0, NULL, BLINK_ON);
 	display_chars(0, LCD_SEG_L2_4_0, "FLT", SEG_SET);
@@ -399,6 +438,7 @@ static struct menu_editmode_item edit_items[] = {
 	{&edit_consumption_sel, &edit_consumption_dsel, &edit_consumption_set},
 	{&edit_unit_sel, &edit_unit_dsel, &edit_unit_set},
 	{&edit_filter_sel, &edit_filter_dsel, &edit_filter_set},
+    {&edit_threshold_sel, &edit_threshold_dsel, &edit_threshold_set},
 	{ NULL },
 };
 
@@ -408,6 +448,7 @@ void edit_mode_callback(void)
 {
     lcd_screen_activate(0);
 	sys_messagebus_unregister(&update);
+    display_symbol(0, LCD_SEG_L2_COL0, SEG_OFF);
 	menu_editmode_start(&edit_save, edit_items);
 }
 
@@ -418,11 +459,12 @@ void calib_callback(void)
         
         set_altitude_calibration(baseCalib[submenuState -1]);
 
-        //update_pressure_table(sAlt.raw_altitude, sAlt.pressure, sAlt.temperature);
+        //update_pressure_table(sAlt.raw_altitude, sAlt.pressure, sAlt.temperature);    
         buzzer_shortBip();
-        update(SYS_MSG_FAKE);
+        display_clear(0, 2); 
         submenuState = 0;
-        display_clear(0, 2);
+        update(SYS_MSG_FAKE);
+        
 	}
 }
 
@@ -432,6 +474,8 @@ void submenu_callback(void)
     
 	submenuState++;
 	if(submenuState == 6) submenuState = 0;
+    
+    display_symbol(0, LCD_SEG_L2_COL0, SEG_OFF);
 	
 	switch(submenuState){
 		case 0: display_clear(0 ,2);
@@ -447,13 +491,19 @@ void submenu_callback(void)
 		case 5: display_chars(0, LCD_SEG_L2_5_0, " PRE 5", SEG_SET);
 				break;
 	}
-		
+	
+	update(SYS_MSG_FAKE);
 }
 
 
 void up_callback(void)
 {
-    lcd_screen_activate(0xff);
+    if(lcd_screen_currentscreen() == 4){
+        lcd_screen_activate(0);
+    }else{
+        lcd_screen_activate(0xff);
+    }
+    display_symbol(lcd_screen_currentscreen(), LCD_SEG_L2_COL0, SEG_OFF);
     //sys_messagebus_unregister(&screenTimeout);
     //sys_messagebus_register(&screenTimeout, SYS_MSG_TIMER_4S);
 }
@@ -463,3 +513,43 @@ void screenTimeout(void)
     lcd_screen_activate(0);
 }
 
+void time_callback(enum sys_message msg)
+{
+    
+    if((submenuState == 0) && (accelerometer == 0)){
+
+#ifdef CONFIG_MOD_CLOCK_BLINKCOL
+        display_symbol(0, LCD_SEG_L2_COL0,
+            ((rtca_time.sec & 0x01) ? SEG_ON : SEG_OFF));
+#endif
+
+        if (msg & SYS_MSG_RTC_HOUR) {
+#ifdef CONFIG_MOD_CLOCK_AMPM
+            uint8_t tmp_hh = rtca_time.hour;
+            if (tmp_hh > 12) {
+                tmp_hh -= 12;
+            } else if(tmp_hh == 0) {
+                tmp_hh = 12;
+            }
+            _printf(0, LCD_SEG_L2_4_2, " %2u", tmp_hh);
+#else
+            _printf(0, LCD_SEG_L2_4_2, " %02u", rtca_time.hour);
+#endif
+        }
+        
+        if (msg & SYS_MSG_RTC_MINUTE)
+            _printf(0, LCD_SEG_L2_1_0, "%02u", rtca_time.min);
+    }
+}
+
+void down_callback(void)
+{
+//     if(accelerometer == 0){
+//         accelerometer = 1;
+//     }
+//     else{
+//         accelerometer = 0;
+//     }
+
+    update(SYS_MSG_FAKE);
+}

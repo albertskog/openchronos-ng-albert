@@ -50,6 +50,7 @@ extern void submenu_callback(void);
 extern void calib_callback(void);
 extern void display_altitude(int16_t alt, uint8_t scr);
 extern void update(enum sys_message);
+// extern void clock_altitude_timeout(void);
 extern void read_altitude(void);
 
 
@@ -78,7 +79,12 @@ extern void edit_unit_set(int8_t step);
 extern void edit_filter_sel(void);
 extern void edit_filter_dsel(void);
 extern void edit_filter_set(int8_t step);
+extern void edit_threshold_sel(void);
+extern void edit_threshold_dsel(void);
+extern void edit_threshold_set(int8_t step);
 extern void up_callback(void);
+extern void down_callback(void);
+extern void time_callback(enum sys_message msg);
 extern void screenTimeout(void);
 
 
