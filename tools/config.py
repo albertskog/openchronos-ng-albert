@@ -151,6 +151,25 @@ DATA["CONFIG_TEMPERATURE_METRIC"] = {
 	"help": "Show in degrees C if enabled, F otherwise.",
 }
 
+# PRESSURE SENSOR DRIVER ##################################################
+
+DATA["TEXT_PRESSURE"] = {
+	"name": "Pressure sensor driver",
+	"type": "info"
+}
+
+DATA["CONFIG_PRESSURE_BUILD_VTI_PS"] = {
+	"name": "Build driver for VTI pressure sensor (ez430-chronos v1)",
+	"default": True,
+	"help": "",
+}
+
+DATA["CONFIG_PRESSURE_BUILD_BOSCH_PS"] = {
+	"name": "Build driver for bosch pressure sensor (ez430-chronos v2)",
+	"default": True,
+	"help": "",
+}
+
 # AUTOMATICALLY GENERATED MODULE LIST ########################################
 
 DATA["TEXT_MODULES"] = {

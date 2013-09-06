@@ -473,18 +473,24 @@ void init_application(void)
 
 	// ---------------------------------------------------------------------
 	// Init pressure sensor
-	//ps_init();
+#ifdef CONFIG_PRESSURE_BUILD_BOSCH_PS
     bmp_ps_init();
+
     // Bosch sensor not found?
     if (!ps_ok)
     {
         bmp_used = 0;
+#endif
+#ifdef CONFIG_PRESSURE_BUILD_VTI_PS
         cma_ps_init();
+#endif
+#ifdef CONFIG_PRESSURE_BUILD_BOSCH_PS
     }
     else
     {
     	bmp_used = 1;
     }
+#endif
 
 	/* drivers/battery */
 	battery_init();

@@ -111,6 +111,8 @@ static void altitude_deactivate(void)
 
 void mod_altitude_init(void)
 {
+#if defined CONFIG_PRESSURE_BUILD_BOSCH_PS || defined CONFIG_PRESSURE_BUILD_VTI_PS
+    
 	menu_add_entry(" ALTI", &up_callback, &down_callback,
 		&submenu_callback, &edit_mode_callback, &calib_callback, NULL,
 		&altitude_activate, &altitude_deactivate);
@@ -127,6 +129,8 @@ void mod_altitude_init(void)
 		limit_low = -500;
 		limit_high = 9999;
 	}
+	
+#endif
 }
 
 // *************************************************************************************************
@@ -325,20 +329,41 @@ void edit_base5_set(int8_t step)
 
 void edit_consumption_sel(void)
 {	
-	
-	_printf(0, LCD_SEG_L1_1_0, "%1u", consumption);
-	display_chars(0, LCD_SEG_L1_1_0, NULL, BLINK_ON);
-	display_chars(0, LCD_SEG_L2_4_0, "BATT", SEG_SET);
+    if(consumption == 1){
+        display_chars(0, LCD_SEG_L1_3_0, "1MIN", SEG_SET);
+    }else if(consumption == 2){
+        display_chars(0, LCD_SEG_L1_3_0, " 4 S", SEG_SET);
+    }else if(consumption == 3){
+        display_chars(0, LCD_SEG_L1_3_0, " 1 S", SEG_SET);
+    }else if(consumption == 4){
+        display_chars(0, LCD_SEG_L1_3_0, "  20", SEG_SET);
+        display_symbol(0, LCD_UNIT_L1_PER_S, SEG_ON);
+    }
+	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
+	display_chars(0, LCD_SEG_L2_3_0, "POLL", SEG_SET);
 }
 void edit_consumption_dsel(void)
 {
-	display_chars(0, LCD_SEG_L1_1_0, NULL, BLINK_OFF);
+    display_symbol(0, LCD_UNIT_L1_PER_S, SEG_OFF);
+	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
 	display_clear(0, 0);
 }
 void edit_consumption_set(int8_t step)
 {	
 	helpers_loop_s16(&consumption, 1, 4, step);
-	_printf(0, LCD_SEG_L1_1_0, "%1u", consumption);
+    
+	display_symbol(0, LCD_UNIT_L1_PER_S, SEG_OFF);
+    
+    if(consumption == 1){
+        display_chars(0, LCD_SEG_L1_3_0, "1MIN", SEG_SET);
+    }else if(consumption == 2){
+        display_chars(0, LCD_SEG_L1_3_0, " 4 S", SEG_SET);
+    }else if(consumption == 3){
+        display_chars(0, LCD_SEG_L1_3_0, " 1 S", SEG_SET);
+    }else if(consumption == 4){
+        display_chars(0, LCD_SEG_L1_3_0, "  20", SEG_SET);
+        display_symbol(0, LCD_UNIT_L1_PER_S, SEG_ON);
+    }
 }
 
 void edit_threshold_sel(void)
@@ -404,7 +429,7 @@ void edit_filter_sel(void)
 		display_chars(0, LCD_SEG_L1_2_0, "OFF", SEG_SET);
 	}
 	display_chars(0, LCD_SEG_L1_2_0, NULL, BLINK_ON);
-	display_chars(0, LCD_SEG_L2_4_0, "FLT", SEG_SET);
+	display_chars(0, LCD_SEG_L2_2_0, "FLT", SEG_SET);
 }
 void edit_filter_dsel(void)
 {
@@ -426,6 +451,14 @@ void edit_filter_set(int8_t step)
 static void edit_save()
 {
 	sys_messagebus_register(&update, consumption_array[consumption-1]);
+    
+    sys_messagebus_register(&time_callback, SYS_MSG_RTC_MINUTE
+                        | SYS_MSG_RTC_HOUR
+#ifdef CONFIG_MOD_CLOCK_BLINKCOL
+                        | SYS_MSG_RTC_SECOND
+#endif
+    );
+    
 	update(SYS_MSG_FAKE);
 }
 
@@ -448,6 +481,7 @@ void edit_mode_callback(void)
 {
     lcd_screen_activate(0);
 	sys_messagebus_unregister(&update);
+    sys_messagebus_unregister(&time_callback);
     display_symbol(0, LCD_SEG_L2_COL0, SEG_OFF);
 	menu_editmode_start(&edit_save, edit_items);
 }
@@ -462,6 +496,7 @@ void calib_callback(void)
         //update_pressure_table(sAlt.raw_altitude, sAlt.pressure, sAlt.temperature);    
         buzzer_shortBip();
         display_clear(0, 2); 
+        display_chars(0, LCD_SEG_L2_5_0, NULL, BLINK_OFF);
         submenuState = 0;
         update(SYS_MSG_FAKE);
         
@@ -479,8 +514,10 @@ void submenu_callback(void)
 	
 	switch(submenuState){
 		case 0: display_clear(0 ,2);
+                display_chars(0, LCD_SEG_L2_5_0, NULL, BLINK_OFF);
 				break;
 		case 1: display_chars(0, LCD_SEG_L2_5_0, " PRE 1", SEG_SET);
+                display_chars(0, LCD_SEG_L2_5_0, NULL, BLINK_ON);
 				break;
 		case 2: display_chars(0, LCD_SEG_L2_5_0, " PRE 2", SEG_SET);
 				break;
