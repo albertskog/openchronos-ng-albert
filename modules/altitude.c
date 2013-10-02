@@ -59,6 +59,13 @@ char *consumption_str[4] = {
 	" 1 S",
 	"  20"
 };
+char *pre_str[5] = {
+	" PRE 1",
+	" PRE 2",
+	" PRE 3",
+	" PRE 4",
+	" PRE 5"
+};
 
 #ifdef CONFIG_MOD_ALTITUDE_METRIC
 uint8_t useMetric = 1;
@@ -230,108 +237,23 @@ void display_altitude(int16_t alt, uint8_t scr)
 
 
 
-void edit_base1_sel(uint8_t pos)
+void edit_base_sel(uint8_t pos)
 {	
-	display_altitude(baseCalib[0], 0);
+	display_altitude(baseCalib[pos], 0);
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
-	display_chars(0, LCD_SEG_L2_5_0, " PRE 1", SEG_SET);
+	display_chars(0, LCD_SEG_L2_5_0, pre_str[pos], SEG_SET);
 }
-void edit_base1_dsel(uint8_t pos)
+void edit_base_dsel(uint8_t pos)
 {
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
 	display_clear(0, 0);
 }
-void edit_base1_set(uint8_t pos, int8_t step)
+void edit_base_set(uint8_t pos, int8_t step)
 {	
-	helpers_loop_s16(&baseCalib[0], limit_low, limit_high, step);
+	helpers_loop_s16(&baseCalib[pos], limit_low, limit_high, step);
 	
-	display_altitude(baseCalib[0], 0);
-
+	display_altitude(baseCalib[pos], 0);
 }
-
-
-
-void edit_base2_sel(uint8_t pos)
-{	
-	display_altitude(baseCalib[1], 0);
-	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
-	display_chars(0, LCD_SEG_L2_5_0, " PRE 2", SEG_SET);
-}
-void edit_base2_dsel(uint8_t pos)
-{
-	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
-	display_clear(0, 0);
-}
-void edit_base2_set(uint8_t pos, int8_t step)
-{	
-	helpers_loop_s16(&baseCalib[1], limit_low, limit_high, step);
-	
-	display_altitude(baseCalib[1], 0);
-
-}
-
-
-
-void edit_base3_sel(uint8_t pos)
-{	
-	display_altitude(baseCalib[2], 0);
-	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
-	display_chars(0, LCD_SEG_L2_5_0, " PRE 3", SEG_SET);
-}
-void edit_base3_dsel(uint8_t pos)
-{
-	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
-	display_clear(0, 0);
-}
-void edit_base3_set(uint8_t pos, int8_t step)
-{	
-	helpers_loop_s16(&baseCalib[2], limit_low, limit_high, step);
-	
-	display_altitude(baseCalib[2], 0);
-
-}
-
-
-
-void edit_base4_sel(uint8_t pos)
-{	
-	display_altitude(baseCalib[3], 0);
-	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
-	display_chars(0, LCD_SEG_L2_5_0, " PRE 4", SEG_SET);
-}
-void edit_base4_dsel(uint8_t pos)
-{
-	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
-	display_clear(0, 0);
-}
-void edit_base4_set(uint8_t pos, int8_t step)
-{	
-	helpers_loop_s16(&baseCalib[3], limit_low, limit_high, step);
-	
-	display_altitude(baseCalib[3], 0);
-
-}
-
-
-void edit_base5_sel(uint8_t pos)
-{	
-	display_altitude(baseCalib[4], 0);
-	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
-	display_chars(0, LCD_SEG_L2_5_0, " PRE 5", SEG_SET);
-}
-void edit_base5_dsel(uint8_t pos)
-{
-	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
-	display_clear(0, 0);
-}
-void edit_base5_set(uint8_t pos, int8_t step)
-{	
-	helpers_loop_s16(&baseCalib[4], limit_low, limit_high, step);
-	
-	display_altitude(baseCalib[4], 0);
-
-}
-
 
 void edit_consumption_sel(uint8_t pos)
 {	
@@ -451,11 +373,11 @@ static void edit_save()
 }
 
 static struct menu_editmode_item edit_items[] = {
-	{&edit_base1_sel, &edit_base1_dsel, &edit_base1_set},
-	{&edit_base2_sel, &edit_base2_dsel, &edit_base2_set},
-	{&edit_base3_sel, &edit_base3_dsel, &edit_base3_set},
-	{&edit_base4_sel, &edit_base4_dsel, &edit_base4_set},
-	{&edit_base5_sel, &edit_base5_dsel, &edit_base5_set},
+	{&edit_base_sel, &edit_base_dsel, &edit_base_set},
+	{&edit_base_sel, &edit_base_dsel, &edit_base_set},
+	{&edit_base_sel, &edit_base_dsel, &edit_base_set},
+	{&edit_base_sel, &edit_base_dsel, &edit_base_set},
+	{&edit_base_sel, &edit_base_dsel, &edit_base_set},
 	{&edit_consumption_sel, &edit_consumption_dsel, &edit_consumption_set},
 	{&edit_unit_sel, &edit_unit_dsel, &edit_unit_set},
 	{&edit_filter_sel, &edit_filter_dsel, &edit_filter_set},
@@ -499,22 +421,13 @@ void submenu_callback(void)
 	if(submenuState == 6) submenuState = 0;
     
     display_symbol(0, LCD_SEG_L2_COL0, SEG_OFF);
-	
-	switch(submenuState){
-		case 0: display_clear(0 ,2);
-                display_chars(0, LCD_SEG_L2_5_0, NULL, BLINK_OFF);
-				break;
-		case 1: display_chars(0, LCD_SEG_L2_5_0, " PRE 1", SEG_SET);
-                display_chars(0, LCD_SEG_L2_5_0, NULL, BLINK_ON);
-				break;
-		case 2: display_chars(0, LCD_SEG_L2_5_0, " PRE 2", SEG_SET);
-				break;
-		case 3: display_chars(0, LCD_SEG_L2_5_0, " PRE 3", SEG_SET);
-				break;
-		case 4: display_chars(0, LCD_SEG_L2_5_0, " PRE 4", SEG_SET);
-				break;
-		case 5: display_chars(0, LCD_SEG_L2_5_0, " PRE 5", SEG_SET);
-				break;
+
+	if (submenuState == 0) {
+		display_clear(0, 2);
+		display_chars(0, LCD_SEG_L2_5_0, NULL, BLINK_OFF);
+	} else {
+		display_chars(0, LCD_SEG_L2_5_0, pre_str[submenuState-1], SEG_SET);
+		display_chars(0, LCD_SEG_L2_5_0, NULL, BLINK_ON);
 	}
 	
 	update(SYS_MSG_FAKE);

@@ -55,33 +55,6 @@ extern void read_altitude(void);
 
 
 // edit mode functions
-extern void edit_base1_sel(uint8_t pos);
-extern void edit_base1_dsel(uint8_t pos);
-extern void edit_base1_set(uint8_t pos, int8_t step);
-extern void edit_base2_sel(uint8_t pos);
-extern void edit_base2_dsel(uint8_t pos);
-extern void edit_base2_set(uint8_t pos, int8_t step);
-extern void edit_base3_sel(uint8_t pos);
-extern void edit_base3_dsel(uint8_t pos);
-extern void edit_base3_set(uint8_t pos, int8_t step);
-extern void edit_base4_sel(uint8_t pos);
-extern void edit_base4_dsel(uint8_t pos);
-extern void edit_base4_set(uint8_t pos, int8_t step);
-extern void edit_base5_sel(uint8_t pos);
-extern void edit_base5_dsel(uint8_t pos);
-extern void edit_base5_set(uint8_t pos, int8_t step);
-extern void edit_consumption_sel(uint8_t pos);
-extern void edit_consumption_dsel(uint8_t pos);
-extern void edit_consumption_set(uint8_t pos, int8_t step);
-extern void edit_unit_sel(uint8_t pos);
-extern void edit_unit_dsel(uint8_t pos);
-extern void edit_unit_set(uint8_t pos, int8_t step);
-extern void edit_filter_sel(uint8_t pos);
-extern void edit_filter_dsel(uint8_t pos);
-extern void edit_filter_set(uint8_t pos, int8_t step);
-extern void edit_threshold_sel(uint8_t pos);
-extern void edit_threshold_dsel(uint8_t pos);
-extern void edit_threshold_set(uint8_t pos, int8_t step);
 extern void up_callback(void);
 extern void down_callback(void);
 extern void time_callback(enum sys_message msg);
