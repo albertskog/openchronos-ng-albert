@@ -84,16 +84,16 @@ static inline void update_screen()
 				| SYS_MSG_RTC_HOUR  | SYS_MSG_RTC_MINUTE);
 }
 /********************* edit mode callbacks ********************************/
-static void edit_yy_sel(void)
+static void edit_yy_sel(uint8_t pos)
 {
 	lcd_screen_activate(1);
 	display_chars(1, LCD_SEG_L1_3_0, NULL, BLINK_ON);
 }
-static void edit_yy_dsel(void)
+static void edit_yy_dsel(uint8_t pos)
 {
 	display_chars(1, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
 }
-static void edit_yy_set(int8_t step)
+static void edit_yy_set(uint8_t pos, int8_t step)
 {
 	/* this allows setting years between 2012 and 2022 */
 	*((uint8_t *)&rtca_time.year + 1) = 0x07;
@@ -102,7 +102,7 @@ static void edit_yy_set(int8_t step)
 	_printf(1, LCD_SEG_L1_3_0, "%04u", rtca_time.year);
 }
 
-static void edit_mo_sel(void)
+static void edit_mo_sel(uint8_t pos)
 {
 	lcd_screen_activate(0);
 #ifdef CONFIG_MOD_CLOCK_MONTH_FIRST
@@ -111,7 +111,7 @@ static void edit_mo_sel(void)
 	display_chars(0, LCD_SEG_L2_1_0, NULL, BLINK_ON);
 #endif
 }
-static void edit_mo_dsel(void)
+static void edit_mo_dsel(uint8_t pos)
 {
 #ifdef CONFIG_MOD_CLOCK_MONTH_FIRST
 	display_chars(0, LCD_SEG_L2_4_3, NULL, BLINK_OFF);
@@ -120,7 +120,7 @@ static void edit_mo_dsel(void)
 #endif
 }
 
-static void edit_mo_set(int8_t step)
+static void edit_mo_set(uint8_t pos, int8_t step)
 {
 	helpers_loop(&rtca_time.mon, 1, 12, step);
 #ifdef CONFIG_MOD_CLOCK_MONTH_FIRST
@@ -130,7 +130,7 @@ static void edit_mo_set(int8_t step)
 #endif
 }
 
-static void edit_dd_sel(void)
+static void edit_dd_sel(uint8_t pos)
 {
 	lcd_screen_activate(0);
 #ifdef CONFIG_MOD_CLOCK_MONTH_FIRST
@@ -140,7 +140,7 @@ static void edit_dd_sel(void)
 #endif
 }
 
-static void edit_dd_dsel(void)
+static void edit_dd_dsel(uint8_t pos)
 {
 #ifdef CONFIG_MOD_CLOCK_MONTH_FIRST
 	display_chars(0, LCD_SEG_L2_1_0, NULL, BLINK_OFF);
@@ -149,7 +149,7 @@ static void edit_dd_dsel(void)
 #endif
 }
 
-static void edit_dd_set(int8_t step)
+static void edit_dd_set(uint8_t pos, int8_t step)
 {
 	helpers_loop(&rtca_time.day, 1, rtca_get_max_days(rtca_time.mon,
 						rtca_time.year), step);
@@ -160,32 +160,32 @@ static void edit_dd_set(int8_t step)
 #endif
 }
 
-static void edit_mm_sel(void)
+static void edit_mm_sel(uint8_t pos)
 {
 	lcd_screen_activate(0);
 	display_chars(0, LCD_SEG_L1_1_0, NULL, BLINK_ON);
 }
-static void edit_mm_dsel(void)
+static void edit_mm_dsel(uint8_t pos)
 {
 	display_chars(0, LCD_SEG_L1_1_0, NULL, BLINK_OFF);
 }
-static void edit_mm_set(int8_t step)
+static void edit_mm_set(uint8_t pos, int8_t step)
 {
 	helpers_loop(&rtca_time.min, 0, 59, step);
 
 	_printf(0, LCD_SEG_L1_1_0, "%02u", rtca_time.min);
 }
 
-static void edit_hh_sel(void)
+static void edit_hh_sel(uint8_t pos)
 {
 	lcd_screen_activate(0);
 	display_chars(0, LCD_SEG_L1_3_2, NULL, BLINK_ON);
 }
-static void edit_hh_dsel(void)
+static void edit_hh_dsel(uint8_t pos)
 {
 	display_chars(0, LCD_SEG_L1_3_2, NULL, BLINK_OFF);
 }
-static void edit_hh_set(int8_t step)
+static void edit_hh_set(uint8_t pos, int8_t step)
 {
 	helpers_loop(&rtca_time.hour, 0, 23, step);
 #ifdef CONFIG_MOD_CLOCK_AMPM

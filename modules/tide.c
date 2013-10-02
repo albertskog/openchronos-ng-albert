@@ -214,33 +214,33 @@ void minuteTick()
 }
 
 /* MARK: - Time Setup */
-void editHHSelect()
+void editHHSelect(uint8_t pos)
 {
 	display_chars(0, LCD_SEG_L1_3_2, NULL, BLINK_ON);
 }
 
-void editHHDeselect(void)
+void editHHDeselect(uint8_t pos)
 {
 	display_chars(0, LCD_SEG_L1_3_2, NULL, BLINK_OFF);
 }
 
-void editHHSet(int8_t step)
+void editHHSet(uint8_t pos, int8_t step)
 {
 	helpers_loop(&(enteredTimeOfNextLow.hoursLeft), 0, 23, step);
 	_printf(0, LCD_SEG_L1_3_2, "%02u", enteredTimeOfNextLow.hoursLeft);
 }
 
-void editMMSelect(void)
+void editMMSelect(uint8_t pos)
 {
 	display_chars(0, LCD_SEG_L1_1_0, NULL, BLINK_ON);
 }
 
-void editMMDeselect(void)
+void editMMDeselect(uint8_t pos)
 {
 	display_chars(0, LCD_SEG_L1_1_0, NULL, BLINK_OFF);
 }
 
-void editMMSet(int8_t step)
+void editMMSet(uint8_t pos, int8_t step)
 {
 	helpers_loop(&(enteredTimeOfNextLow.minutesLeft), 0, 59, step);
 	_printf(0, LCD_SEG_L1_1_0, "%02u", enteredTimeOfNextLow.minutesLeft);

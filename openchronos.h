@@ -57,9 +57,9 @@ void menu_add_entry(
 	\brief A item structure for menu_editmode_start.
 */
 struct menu_editmode_item {
-	void (* select)(void);     /*!< item selected callback */
-	void (* deselect)(void);   /*!< item deselected callback */
-	void (* set)(int8_t step); /*!< set value of item callback */
+	void (* select)(uint8_t pos);     /*!< item selected callback */
+	void (* deselect)(uint8_t pos);   /*!< item deselected callback */
+	void (* set)(uint8_t pos, int8_t step); /*!< set value of item callback */
 };
 
 /*!

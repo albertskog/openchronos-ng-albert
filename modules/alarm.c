@@ -51,34 +51,34 @@ static void alarm_event(enum sys_message msg)
 }
 
 /*************************** edit mode callbacks **************************/
-static void edit_hh_sel(void)
+static void edit_hh_sel(uint8_t pos)
 {
 	display_chars(0, LCD_SEG_L1_3_2, NULL, BLINK_ON);
 }
 
-static void edit_hh_dsel(void)
+static void edit_hh_dsel(uint8_t pos)
 {
 	display_chars(0, LCD_SEG_L1_3_2, NULL, BLINK_OFF);
 }
 
-static void edit_hh_set(int8_t step)
+static void edit_hh_set(uint8_t pos, int8_t step)
 {
 	/* TODO: fix for 12/24 hr! */
 	helpers_loop(&tmp_hh, 0, 23, step);
 	_printf(0, LCD_SEG_L1_3_2, "%02u", tmp_hh);
 }
 
-static void edit_mm_sel(void)
+static void edit_mm_sel(uint8_t pos)
 {
 	display_chars(0, LCD_SEG_L1_1_0, NULL, BLINK_ON);
 }
 
-static void edit_mm_dsel(void)
+static void edit_mm_dsel(uint8_t pos)
 {
 	display_chars(0, LCD_SEG_L1_1_0, NULL, BLINK_OFF);
 }
 
-static void edit_mm_set(int8_t step)
+static void edit_mm_set(uint8_t pos, int8_t step)
 {
 	helpers_loop(&tmp_mm, 0, 59, step);
 	_printf(0, LCD_SEG_L1_1_0, "%02u", tmp_mm);

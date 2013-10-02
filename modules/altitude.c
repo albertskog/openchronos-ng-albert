@@ -230,18 +230,18 @@ void display_altitude(int16_t alt, uint8_t scr)
 
 
 
-void edit_base1_sel(void)
+void edit_base1_sel(uint8_t pos)
 {	
 	display_altitude(baseCalib[0], 0);
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
 	display_chars(0, LCD_SEG_L2_5_0, " PRE 1", SEG_SET);
 }
-void edit_base1_dsel(void)
+void edit_base1_dsel(uint8_t pos)
 {
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
 	display_clear(0, 0);
 }
-void edit_base1_set(int8_t step)
+void edit_base1_set(uint8_t pos, int8_t step)
 {	
 	helpers_loop_s16(&baseCalib[0], limit_low, limit_high, step);
 	
@@ -251,18 +251,18 @@ void edit_base1_set(int8_t step)
 
 
 
-void edit_base2_sel(void)
+void edit_base2_sel(uint8_t pos)
 {	
 	display_altitude(baseCalib[1], 0);
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
 	display_chars(0, LCD_SEG_L2_5_0, " PRE 2", SEG_SET);
 }
-void edit_base2_dsel(void)
+void edit_base2_dsel(uint8_t pos)
 {
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
 	display_clear(0, 0);
 }
-void edit_base2_set(int8_t step)
+void edit_base2_set(uint8_t pos, int8_t step)
 {	
 	helpers_loop_s16(&baseCalib[1], limit_low, limit_high, step);
 	
@@ -272,18 +272,18 @@ void edit_base2_set(int8_t step)
 
 
 
-void edit_base3_sel(void)
+void edit_base3_sel(uint8_t pos)
 {	
 	display_altitude(baseCalib[2], 0);
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
 	display_chars(0, LCD_SEG_L2_5_0, " PRE 3", SEG_SET);
 }
-void edit_base3_dsel(void)
+void edit_base3_dsel(uint8_t pos)
 {
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
 	display_clear(0, 0);
 }
-void edit_base3_set(int8_t step)
+void edit_base3_set(uint8_t pos, int8_t step)
 {	
 	helpers_loop_s16(&baseCalib[2], limit_low, limit_high, step);
 	
@@ -293,18 +293,18 @@ void edit_base3_set(int8_t step)
 
 
 
-void edit_base4_sel(void)
+void edit_base4_sel(uint8_t pos)
 {	
 	display_altitude(baseCalib[3], 0);
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
 	display_chars(0, LCD_SEG_L2_5_0, " PRE 4", SEG_SET);
 }
-void edit_base4_dsel(void)
+void edit_base4_dsel(uint8_t pos)
 {
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
 	display_clear(0, 0);
 }
-void edit_base4_set(int8_t step)
+void edit_base4_set(uint8_t pos, int8_t step)
 {	
 	helpers_loop_s16(&baseCalib[3], limit_low, limit_high, step);
 	
@@ -313,18 +313,18 @@ void edit_base4_set(int8_t step)
 }
 
 
-void edit_base5_sel(void)
+void edit_base5_sel(uint8_t pos)
 {	
 	display_altitude(baseCalib[4], 0);
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
 	display_chars(0, LCD_SEG_L2_5_0, " PRE 5", SEG_SET);
 }
-void edit_base5_dsel(void)
+void edit_base5_dsel(uint8_t pos)
 {
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
 	display_clear(0, 0);
 }
-void edit_base5_set(int8_t step)
+void edit_base5_set(uint8_t pos, int8_t step)
 {	
 	helpers_loop_s16(&baseCalib[4], limit_low, limit_high, step);
 	
@@ -333,20 +333,20 @@ void edit_base5_set(int8_t step)
 }
 
 
-void edit_consumption_sel(void)
+void edit_consumption_sel(uint8_t pos)
 {	
 	display_chars(0, LCD_SEG_L1_3_0, consumption_str[consumption-1], SEG_SET);
 	display_symbol(0, LCD_UNIT_L1_PER_S, consumption == 4 ? SEG_ON : SEG_OFF);
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
 	display_chars(0, LCD_SEG_L2_3_0, "POLL", SEG_SET);
 }
-void edit_consumption_dsel(void)
+void edit_consumption_dsel(uint8_t pos)
 {
     display_symbol(0, LCD_UNIT_L1_PER_S, SEG_OFF);
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
 	display_clear(0, 0);
 }
-void edit_consumption_set(int8_t step)
+void edit_consumption_set(uint8_t pos, int8_t step)
 {	
 	helpers_loop(&consumption, 1, 4, step);
     
@@ -354,26 +354,26 @@ void edit_consumption_set(int8_t step)
 	display_symbol(0, LCD_UNIT_L1_PER_S, consumption == 4 ? SEG_ON : SEG_OFF);
 }
 
-void edit_threshold_sel(void)
+void edit_threshold_sel(uint8_t pos)
 {   
     
     _printf(0, LCD_SEG_L1_1_0, "%1u", sAlt.accu_threshold);
     display_chars(0, LCD_SEG_L1_1_0, NULL, BLINK_ON);
     display_chars(0, LCD_SEG_L2_4_0, "THRES", SEG_SET);
 }
-void edit_threshold_dsel(void)
+void edit_threshold_dsel(uint8_t pos)
 {
     display_chars(0, LCD_SEG_L1_1_0, NULL, BLINK_OFF);
     display_clear(0, 0);
 }
-void edit_threshold_set(int8_t step)
+void edit_threshold_set(uint8_t pos, int8_t step)
 {   
     helpers_loop(&sAlt.accu_threshold, 0, 9, step);
     _printf(0, LCD_SEG_L1_1_0, "%1u", sAlt.accu_threshold);
 }
 
 
-void edit_unit_sel(void)
+void edit_unit_sel(uint8_t pos)
 {	
 	if(useMetric){
 		display_chars(0, LCD_SEG_L1_2_1, "M", SEG_SET);
@@ -387,12 +387,12 @@ void edit_unit_sel(void)
 	display_chars(0, LCD_SEG_L1_2_1, NULL, BLINK_ON);
 	display_chars(0, LCD_SEG_L2_3_0, "UNIT", SEG_SET);
 }
-void edit_unit_dsel(void)
+void edit_unit_dsel(uint8_t pos)
 {
 	display_chars(0, LCD_SEG_L1_2_1, NULL, BLINK_OFF);
 	display_clear(0,0);
 }
-void edit_unit_set(int8_t step)
+void edit_unit_set(uint8_t pos, int8_t step)
 {
 	if(useMetric){
 		useMetric = 0;
@@ -409,7 +409,7 @@ void edit_unit_set(int8_t step)
 }
 
 
-void edit_filter_sel(void)
+void edit_filter_sel(uint8_t pos)
 {	
 	if(useFilter){
 		display_chars(0, LCD_SEG_L1_2_1, "ON", SEG_SET);
@@ -419,12 +419,12 @@ void edit_filter_sel(void)
 	display_chars(0, LCD_SEG_L1_2_0, NULL, BLINK_ON);
 	display_chars(0, LCD_SEG_L2_2_0, "FLT", SEG_SET);
 }
-void edit_filter_dsel(void)
+void edit_filter_dsel(uint8_t pos)
 {
 	display_chars(0, LCD_SEG_L1_2_0, NULL, BLINK_OFF);
 	display_clear(0,0);
 }
-void edit_filter_set(int8_t step)
+void edit_filter_set(uint8_t pos, int8_t step)
 {
 	if(useFilter){
 		useFilter = 0;

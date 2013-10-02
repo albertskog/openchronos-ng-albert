@@ -222,26 +222,26 @@ static void editmode_handler(void)
 	/* STAR button exits edit mode */
 	if (ports_button_pressed(PORTS_BTN_STAR, 0)) {
 		/* deselect item */
-		menu_editmode.items[menu_editmode.pos].deselect();
+		menu_editmode.items[menu_editmode.pos].deselect(menu_editmode.pos);
 
 		menu_editmode.complete_fn();
 		menu_editmode.enabled = 0;
 
 	} else if (ports_button_pressed(PORTS_BTN_NUM, 0)) {
 		/* deselect current item */
-		menu_editmode.items[menu_editmode.pos].deselect();
+		menu_editmode.items[menu_editmode.pos].deselect(menu_editmode.pos);
 
 		/* select next item */
 		menu_editmode.pos++;
 		if (! menu_editmode.items[menu_editmode.pos].set)
 			menu_editmode.pos = 0;
-			menu_editmode.items[menu_editmode.pos].select();
+			menu_editmode.items[menu_editmode.pos].select(menu_editmode.pos);
 
 		} else if (ports_button_pressed(PORTS_BTN_UP, 0)) {
-			menu_editmode.items[menu_editmode.pos].set(1);
+			menu_editmode.items[menu_editmode.pos].set(menu_editmode.pos, 1);
 
 		} else if (ports_button_pressed(PORTS_BTN_DOWN, 0)) {
-			menu_editmode.items[menu_editmode.pos].set(-1);
+			menu_editmode.items[menu_editmode.pos].set(menu_editmode.pos, -1);
 	}
 }
 
@@ -391,7 +391,7 @@ void menu_editmode_start(void (* complete_fn)(void),
 	menu_editmode.enabled = 1;
 
 	/* select the first item */
-	menu_editmode.items[0].select();
+	menu_editmode.items[0].select(menu_editmode.pos);
 }
 
 /***************************************************************************

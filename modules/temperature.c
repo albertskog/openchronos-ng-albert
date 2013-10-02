@@ -45,15 +45,15 @@ static void measure_temp(enum sys_message msg)
 
 /********************* edit mode callbacks ********************************/
 
-static void edit_offset_sel(void)
+static void edit_offset_sel(uint8_t pos)
 {
 	display_chars(0, LCD_SEG_L2_3_0, NULL, BLINK_ON);
 }
-static void edit_offset_dsel(void)
+static void edit_offset_dsel(uint8_t pos)
 {
 	display_chars(0, LCD_SEG_L2_3_0, NULL, BLINK_OFF);
 }
-static void edit_offset_set(int8_t step)
+static void edit_offset_set(uint8_t pos, int8_t step)
 {
 	temperature.offset += step;
 	display_temperature();
