@@ -348,7 +348,7 @@ void edit_consumption_dsel(void)
 }
 void edit_consumption_set(int8_t step)
 {	
-	helpers_loop_s16(&consumption, 1, 4, step);
+	helpers_loop(&consumption, 1, 4, step);
     
 	display_chars(0, LCD_SEG_L1_3_0, consumption_str[consumption-1], SEG_SET);
 	display_symbol(0, LCD_UNIT_L1_PER_S, consumption == 4 ? SEG_ON : SEG_OFF);
@@ -368,7 +368,7 @@ void edit_threshold_dsel(void)
 }
 void edit_threshold_set(int8_t step)
 {   
-    helpers_loop_s16(&sAlt.accu_threshold, 0, 9, step);
+    helpers_loop(&sAlt.accu_threshold, 0, 9, step);
     _printf(0, LCD_SEG_L1_1_0, "%1u", sAlt.accu_threshold);
 }
 
