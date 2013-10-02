@@ -53,6 +53,12 @@ int16_t consumption_array[4] = {
 	SYS_MSG_RTC_SECOND,
 	SYS_MSG_TIMER_20HZ
 };
+char *consumption_str[4] = {
+	"1MIN",
+	" 4 S",
+	" 1 S",
+	"  20"
+};
 
 #ifdef CONFIG_MOD_ALTITUDE_METRIC
 uint8_t useMetric = 1;
@@ -329,16 +335,8 @@ void edit_base5_set(int8_t step)
 
 void edit_consumption_sel(void)
 {	
-    if(consumption == 1){
-        display_chars(0, LCD_SEG_L1_3_0, "1MIN", SEG_SET);
-    }else if(consumption == 2){
-        display_chars(0, LCD_SEG_L1_3_0, " 4 S", SEG_SET);
-    }else if(consumption == 3){
-        display_chars(0, LCD_SEG_L1_3_0, " 1 S", SEG_SET);
-    }else if(consumption == 4){
-        display_chars(0, LCD_SEG_L1_3_0, "  20", SEG_SET);
-        display_symbol(0, LCD_UNIT_L1_PER_S, SEG_ON);
-    }
+	display_chars(0, LCD_SEG_L1_3_0, consumption_str[consumption-1], SEG_SET);
+	display_symbol(0, LCD_UNIT_L1_PER_S, consumption == 4 ? SEG_ON : SEG_OFF);
 	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
 	display_chars(0, LCD_SEG_L2_3_0, "POLL", SEG_SET);
 }
@@ -352,18 +350,8 @@ void edit_consumption_set(int8_t step)
 {	
 	helpers_loop_s16(&consumption, 1, 4, step);
     
-	display_symbol(0, LCD_UNIT_L1_PER_S, SEG_OFF);
-    
-    if(consumption == 1){
-        display_chars(0, LCD_SEG_L1_3_0, "1MIN", SEG_SET);
-    }else if(consumption == 2){
-        display_chars(0, LCD_SEG_L1_3_0, " 4 S", SEG_SET);
-    }else if(consumption == 3){
-        display_chars(0, LCD_SEG_L1_3_0, " 1 S", SEG_SET);
-    }else if(consumption == 4){
-        display_chars(0, LCD_SEG_L1_3_0, "  20", SEG_SET);
-        display_symbol(0, LCD_UNIT_L1_PER_S, SEG_ON);
-    }
+	display_chars(0, LCD_SEG_L1_3_0, consumption_str[consumption-1], SEG_SET);
+	display_symbol(0, LCD_UNIT_L1_PER_S, consumption == 4 ? SEG_ON : SEG_OFF);
 }
 
 void edit_threshold_sel(void)
