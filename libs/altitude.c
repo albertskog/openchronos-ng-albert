@@ -12,6 +12,8 @@ uint8_t useFilter = 1;
 uint8_t useFilter = 0;
 #endif
 
+uint8_t altPowerMode = (CONFIG_MOD_ALTITUDE_POWER-1);
+
 struct alt sAlt;
 
 // *************************************************************************************************
@@ -165,8 +167,8 @@ void do_altitude_measurement()
     // Get pressure (format is 1Pa) from sensor
     if (bmp_used)
     {
-        // Start sampling data in ultra low power mode
-        bmp_ps_write_register(BMP_085_CTRL_MEAS_REG, BMP_085_P_MEASURE);
+        // Start sampling data in configurable power mode
+        bmp_ps_write_register(BMP_085_CTRL_MEAS_REG, BMP_085_P_MEASURE + (altPowerMode << 6));
         // Get updated altitude
         while ((PS_INT_IN & PS_INT_PIN) == 0) ;
 

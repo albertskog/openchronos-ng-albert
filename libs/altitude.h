@@ -6,6 +6,7 @@
                                                    // save battery
 
 extern uint8_t useFilter;
+extern uint8_t altPowerMode;
 extern void reset_altitude_measurement(void);
 extern void start_altitude_measurement(void);
 extern void stop_altitude_measurement(void);

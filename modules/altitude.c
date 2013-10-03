@@ -59,6 +59,12 @@ int16_t consumption_array[4] = {
 	SYS_MSG_RTC_SECOND,
 	SYS_MSG_TIMER_20HZ
 };
+char *power_mode_str[4] = {
+	" LOW",
+	"STND",
+	"HIGH",
+	"ULTR"
+};
 char *consumption_str[4] = {
 	"1MIN",
 	" 4 S",
@@ -315,11 +321,30 @@ void edit_consumption_dsel(uint8_t pos)
 	display_clear(0, 0);
 }
 void edit_consumption_set(uint8_t pos, int8_t step)
-{	
+{
 	helpers_loop(&consumption, 1, 4, step);
     
 	display_chars(0, LCD_SEG_L1_3_0, consumption_str[consumption-1], SEG_SET);
 	display_symbol(0, LCD_UNIT_L1_PER_S, consumption == 4 ? SEG_ON : SEG_OFF);
+}
+
+void edit_power_sel(uint8_t pos)
+{
+	display_chars(0, LCD_SEG_L1_3_0, power_mode_str[altPowerMode], SEG_SET);
+	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_ON);
+	display_chars(0, LCD_SEG_L2_5_0, " POWER", SEG_SET);
+}
+void edit_power_dsel(uint8_t pos)
+{
+    display_symbol(0, LCD_UNIT_L1_PER_S, SEG_OFF);
+	display_chars(0, LCD_SEG_L1_3_0, NULL, BLINK_OFF);
+	display_clear(0, 0);
+}
+void edit_power_set(uint8_t pos, int8_t step)
+{
+	helpers_loop(&altPowerMode, 0, 3, step);
+
+	display_chars(0, LCD_SEG_L1_3_0, power_mode_str[altPowerMode], SEG_SET);
 }
 
 void edit_threshold_sel(uint8_t pos)
@@ -425,6 +450,7 @@ static struct menu_editmode_item edit_items[] = {
 	{&edit_base_sel, &edit_base_dsel, &edit_base_set},
 	{&edit_base_sel, &edit_base_dsel, &edit_base_set},
 	{&edit_consumption_sel, &edit_consumption_dsel, &edit_consumption_set},
+	{&edit_power_sel, &edit_power_dsel, &edit_power_set},
 	{&edit_unit_sel, &edit_unit_dsel, &edit_unit_set},
 	{&edit_filter_sel, &edit_filter_dsel, &edit_filter_set},
     {&edit_threshold_sel, &edit_threshold_dsel, &edit_threshold_set},

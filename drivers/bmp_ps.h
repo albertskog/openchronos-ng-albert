@@ -74,24 +74,8 @@ extern u16 bmp_ps_get_temp(void);
 
 #define BMP_085_SOFT_RESET_REG (0xE0)
 
-#define BMP_085_T_MEASURE            (0x2E)				 // temperature measurent
-#define BMP_085_P_MEASURE_LOW        (0x34)				 // pressure measurement
-#define BMP_085_P_MEASURE_STANDARD   (0x74)
-#define BMP_085_P_MEASURE_HIGH       (0xB4)
-#define BMP_085_P_MEASURE_ULTRA      (0xF4)
-
-#if CONFIG_MOD_ALTITUDE_POWER == 1
-#define BMP_085_P_MEASURE BMP_085_P_MEASURE_LOW
-#endif
-#if CONFIG_MOD_ALTITUDE_POWER == 2
-#define BMP_085_P_MEASURE BMP_085_P_MEASURE_STANDARD
-#endif
-#if CONFIG_MOD_ALTITUDE_POWER == 3
-#define BMP_085_P_MEASURE BMP_085_P_MEASURE_HIGH
-#endif
-#if CONFIG_MOD_ALTITUDE_POWER == 4
-#define BMP_085_P_MEASURE BMP_085_P_MEASURE_ULTRA
-#endif
+#define BMP_085_T_MEASURE    (0x2E)				 // temperature measurent
+#define BMP_085_P_MEASURE    (0x34)				 // pressure measurement
 
 #define BMP_085_TEMP_CONVERSION_TIME (5)		 // TO be spec'd by GL or SB
 
