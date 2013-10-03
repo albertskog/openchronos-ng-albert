@@ -22,6 +22,7 @@ int16_t oldAccuAltitude;
 struct alt
 {
     uint32_t pressure;                                  // Pressure (Pa)
+    uint32_t first_pressure;                            // First pressure measurement.
     uint16_t temperature;                               // Temperature (K)
     int16_t raw_altitude;                              // Altitude (m)
     int16_t raw_maxAltitude;
@@ -37,9 +38,10 @@ struct alt
     int16_t accuClimbDown;
 
     int16_t climb;                                      // Current climb. The unit is
-                                                        // hPa / (s * ALT_HISTORY_LEN/2 * ALT_HISTORY_LEN/2 * 1/f)
+                                                        // Pa / (s * ALT_HISTORY_LEN/2 * ALT_HISTORY_LEN/2 * 1/f)
                                                         // where f is the update frequency
-    uint16_t history[ALT_HISTORY_LEN];                  // Pressure history values (ring buffer, hPa)
+    int16_t history[ALT_HISTORY_LEN];                   // Pressure history values (ring buffer, difference
+                                                        // in Pa between measurement and first_pressure)
     uint8_t history_pos;                                // Position in Ring buffer
 };
 extern struct alt sAlt;
