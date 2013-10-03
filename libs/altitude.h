@@ -16,6 +16,8 @@ extern void set_altitude_calibration(int16_t cal);
 extern int16_t convert_ft_to_m(int16_t ft);
 extern int16_t convert_m_to_ft(int16_t m);
 
+#define ALT_HISTORY_LEN (40)	// History length. Needs to be a multiple of two.
+
 int16_t oldAccuAltitude;
 struct alt
 {
@@ -33,6 +35,12 @@ struct alt
     uint8_t accu_threshold;
     int16_t accuClimbUp;
     int16_t accuClimbDown;
+
+    int16_t climb;                                      // Current climb. The unit is
+                                                        // hPa / (s * ALT_HISTORY_LEN/2 * ALT_HISTORY_LEN/2 * 1/f)
+                                                        // where f is the update frequency
+    uint16_t history[ALT_HISTORY_LEN];                  // Pressure history values (ring buffer, hPa)
+    uint8_t history_pos;                                // Position in Ring buffer
 };
 extern struct alt sAlt;
 

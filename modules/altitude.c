@@ -47,6 +47,12 @@ int32_t limit_high, limit_low;
 uint8_t submenuState = 0;
 uint8_t accelerometer = 0;
 uint8_t consumption = CONFIG_MOD_ALTITUDE_CONSUMPTION;
+int16_t consumption_factor[4] = { // Multiples of 20Hz
+	60*20,
+	4 *20,
+	1 *20,
+	1
+};
 int16_t consumption_array[4] = {
 	SYS_MSG_RTC_MINUTE,
 	SYS_MSG_TIMER_4S,
@@ -74,10 +80,11 @@ uint8_t useMetric = 0;
 #endif
 
 #define ALT_SCREEN_TIME (0)
-#define ALT_SCREEN_MIN (1)
-#define ALT_SCREEN_MAX (2)
-#define ALT_SCREEN_ACC_N (3)
-#define ALT_SCREEN_ACC_P (4)
+#define ALT_SCREEN_CLIMB (1)
+#define ALT_SCREEN_MIN (2)
+#define ALT_SCREEN_MAX (3)
+#define ALT_SCREEN_ACC_N (4)
+#define ALT_SCREEN_ACC_P (5)
 
 
 static void altitude_activate(void)
@@ -96,9 +103,12 @@ static void altitude_activate(void)
 #endif
     );
     
-    lcd_screens_create(5);
-    display_chars(ALT_SCREEN_MIN, LCD_SEG_L2_5_0, " MIN  ", SEG_SET);
-    display_chars(ALT_SCREEN_MAX, LCD_SEG_L2_5_0, " MAX  ", SEG_SET);
+    lcd_screens_create(6);
+    display_chars(ALT_SCREEN_CLIMB, LCD_SEG_L2_5_0, " CLIMB", SEG_SET);
+    display_symbol(ALT_SCREEN_CLIMB, LCD_SEG_L1_DP0, SEG_ON);
+    display_symbol(ALT_SCREEN_CLIMB, LCD_UNIT_L1_PER_S, SEG_ON);
+    display_chars(ALT_SCREEN_MIN,   LCD_SEG_L2_5_0, " MIN  ", SEG_SET);
+    display_chars(ALT_SCREEN_MAX,   LCD_SEG_L2_5_0, " MAX  ", SEG_SET);
     display_chars(ALT_SCREEN_ACC_N, LCD_SEG_L2_5_0, " ACC N", SEG_SET);
     display_chars(ALT_SCREEN_ACC_P, LCD_SEG_L2_5_0, " ACC P", SEG_SET);
 }
@@ -161,6 +171,8 @@ void update(enum sys_message msg)
     
 	display_altitude(sAlt.altitude, 0);
     
+    display_climb(sAlt.climb, ALT_SCREEN_CLIMB);
+
     display_altitude(sAlt.minAltitude, ALT_SCREEN_MIN);
 	display_altitude(sAlt.maxAltitude, ALT_SCREEN_MAX);
     
@@ -239,6 +251,35 @@ void display_altitude(int16_t alt, uint8_t scr)
 	_printf(scr, LCD_SEG_L1_3_0, "%4u", value);
 }
 
+
+// *************************************************************************************************
+// @fn          display_climb
+// @brief       Display routine. Supports display in meters and feet.
+// @param       int16_t climb  climb value
+//              int8_t scr    virtual screen
+// @return      none
+// *************************************************************************************************
+void display_climb(int16_t climb, uint8_t scr)
+{
+	uint16_t value;
+	value = climb > 0 ? climb  : climb * (-1);
+
+	// value needs to be 
+	//  * averaged by ALT_HISTORY_LEN / 2 to get the pressure difference between now
+	//    and (ALT_HISTORY_LEN / 2) * sample rate ago
+	//  * time delta between two measurements is consumption_factor[consumption_factor] / 20 seconds 
+	//  * delta Pa to delta dm is -(10/12)
+	// the factors are thus (20 * 2 * 2 * 10 / 12) = 200/3
+	// hence:
+	value = value * 200 / (3 * ALT_HISTORY_LEN * ALT_HISTORY_LEN * consumption_factor[consumption-1]);
+
+	// Shown arrows only when the value is larger than 0.5 m/s
+	// Note the sign inversion (lower pressure -- higher climb)
+	display_symbol(scr, LCD_SYMB_ARROW_UP,   climb < 0 && value >= 5 ? SEG_ON : SEG_OFF);
+	display_symbol(scr, LCD_SYMB_ARROW_DOWN, climb > 0 && value >= 5 ? SEG_ON : SEG_OFF);
+
+	_printf(scr, LCD_SEG_L1_3_0, "%4u", value);
+}
 
 
 

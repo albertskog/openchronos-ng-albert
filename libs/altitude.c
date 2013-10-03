@@ -27,7 +27,6 @@ void reset_altitude_measurement(void)
     sAlt.timeout = 0;
     // Set default altitude value
     
-
     // Pressure sensor ok?
     if (ps_ok)
     {
@@ -54,6 +53,12 @@ void reset_altitude_measurement(void)
         sAlt.minAltitude = sAlt.raw_minAltitude - sAlt.altitude_offset;
         sAlt.maxAltitude = sAlt.raw_maxAltitude - sAlt.altitude_offset;
         sAlt.altitude = sAlt.raw_altitude - sAlt.altitude_offset;
+
+		sAlt.climb = 0;
+		for (sAlt.history_pos = 0; sAlt.history_pos < ALT_HISTORY_LEN; sAlt.history_pos++) {
+			sAlt.history[sAlt.history_pos] = sAlt.pressure;
+		}
+		sAlt.history_pos = 0;
     }
 }
 
@@ -203,6 +208,17 @@ void do_altitude_measurement()
     sAlt.minAltitude = sAlt.raw_minAltitude - sAlt.altitude_offset;
     sAlt.maxAltitude = sAlt.raw_maxAltitude - sAlt.altitude_offset;
     sAlt.altitude = sAlt.raw_altitude - sAlt.altitude_offset;
+
+	// Update climb value. Calibration is irrelevant, as it is just a constant summand
+	sAlt.history_pos = (sAlt.history_pos + 1) % ALT_HISTORY_LEN;
+	// Remove oldest value
+	sAlt.climb += sAlt.history[sAlt.history_pos];
+	// Add newest value
+	sAlt.history[sAlt.history_pos] = sAlt.pressure;
+	sAlt.climb += sAlt.history[sAlt.history_pos];
+	// The time half a history ago now affects the climb with a different sign,
+	// so subtract twice
+	sAlt.climb -= 2 * sAlt.history[(sAlt.history_pos + ALT_HISTORY_LEN/2) % ALT_HISTORY_LEN];
 }
 
 
@@ -219,6 +235,13 @@ void set_altitude_calibration(int16_t cal)
     oldAccuAltitude = sAlt.raw_altitude;
     sAlt.accuClimbUp = 0;
     sAlt.accuClimbDown = 0;
+
+	sAlt.climb = 0;
+	for (sAlt.history_pos = 0; sAlt.history_pos < ALT_HISTORY_LEN; sAlt.history_pos++) {
+		sAlt.history[sAlt.history_pos] = sAlt.pressure;
+	}
+	sAlt.history_pos = 0;
+	
 }
 
 

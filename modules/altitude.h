@@ -49,6 +49,7 @@ extern void edit_mode_callback(void);
 extern void submenu_callback(void);
 extern void calib_callback(void);
 extern void display_altitude(int16_t alt, uint8_t scr);
+extern void display_climb(int16_t climb, uint8_t scr);
 extern void update(enum sys_message);
 // extern void clock_altitude_timeout(void);
 extern void read_altitude(void);
