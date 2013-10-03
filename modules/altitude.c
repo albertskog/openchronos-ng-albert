@@ -73,6 +73,11 @@ uint8_t useMetric = 1;
 uint8_t useMetric = 0;
 #endif
 
+#define ALT_SCREEN_TIME (0)
+#define ALT_SCREEN_MIN (1)
+#define ALT_SCREEN_MAX (2)
+#define ALT_SCREEN_ACC_N (3)
+#define ALT_SCREEN_ACC_P (4)
 
 
 static void altitude_activate(void)
@@ -91,11 +96,11 @@ static void altitude_activate(void)
 #endif
     );
     
-    lcd_screens_create(6);
-    display_chars(1, LCD_SEG_L2_5_0, " MIN  ", SEG_SET);
-    display_chars(2, LCD_SEG_L2_5_0, " MAX  ", SEG_SET);
-    display_chars(3, LCD_SEG_L2_5_0, " ACC N", SEG_SET);
-    display_chars(4, LCD_SEG_L2_5_0, " ACC P", SEG_SET);
+    lcd_screens_create(5);
+    display_chars(ALT_SCREEN_MIN, LCD_SEG_L2_5_0, " MIN  ", SEG_SET);
+    display_chars(ALT_SCREEN_MAX, LCD_SEG_L2_5_0, " MAX  ", SEG_SET);
+    display_chars(ALT_SCREEN_ACC_N, LCD_SEG_L2_5_0, " ACC N", SEG_SET);
+    display_chars(ALT_SCREEN_ACC_P, LCD_SEG_L2_5_0, " ACC P", SEG_SET);
 }
 
 static void altitude_deactivate(void)
@@ -156,11 +161,11 @@ void update(enum sys_message msg)
     
 	display_altitude(sAlt.altitude, 0);
     
-    display_altitude(sAlt.minAltitude, 1);
-	display_altitude(sAlt.maxAltitude, 2);
+    display_altitude(sAlt.minAltitude, ALT_SCREEN_MIN);
+	display_altitude(sAlt.maxAltitude, ALT_SCREEN_MAX);
     
-    display_altitude(sAlt.accuClimbDown, 3);
-    display_altitude(sAlt.accuClimbUp, 4);
+    display_altitude(sAlt.accuClimbDown, ALT_SCREEN_ACC_N);
+    display_altitude(sAlt.accuClimbUp, ALT_SCREEN_ACC_P);
     
     if((accelerometer == 1) &&(submenuState == 0)){
         display_clear(0 ,2);
@@ -436,11 +441,7 @@ void submenu_callback(void)
 
 void up_callback(void)
 {
-    if(lcd_screen_currentscreen() == 4){
-        lcd_screen_activate(0);
-    }else{
-        lcd_screen_activate(0xff);
-    }
+	lcd_screen_activate(0xff);
     display_symbol(lcd_screen_currentscreen(), LCD_SEG_L2_COL0, SEG_OFF);
     //sys_messagebus_unregister(&screenTimeout);
     //sys_messagebus_register(&screenTimeout, SYS_MSG_TIMER_4S);
