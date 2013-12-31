@@ -23,3 +23,12 @@ This firmware is different from the stock TI one. Use * to enter (and exit) the 
 
 ## Modules
 Clock functions are called modules and reside in the modules folder. Take a look at some of the simple modules to get a hang of how they work.
+
+# Custom Modules
+Here are some modules I added myself.
+
+## Hello World
+As described in [http://www.itopen.it/2013/11/29/openchronos-hello-world-tutorial/](http://www.itopen.it/2013/11/29/openchronos-hello-world-tutorial/)
+
+## Clock-hex
+Hexadecimal version of the clock! Use down arrow to hide or show normal time on the second line and # to toggle date or time display.
