@@ -17,3 +17,5 @@ output.map
 # Ignore NetBeans stuff
 nbproject/
 cscope.out
+
+.DS_Store
